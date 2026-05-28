@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+      
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+      
+      - name: Lint with flake8
+        continue-on-error: true
+        run: |
+          uv run flake8 data/ models/ training/ --count --select=E9,F63,F7,F82 --show-source --statistics || true
+          uv run flake8 data/ models/ training/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+      
+      - name: Run tests with pytest
+        run: |
+          uv run pytest tests/ -v --tb=short --cov=data --cov=models --cov=training --cov-report=xml
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
