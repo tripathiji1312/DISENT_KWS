@@ -1,0 +1,76 @@
+# =============================================================================
+# DISENT-KWS v2 — Requirements
+# =============================================================================
+# Install order matters for some packages (torch before torchaudio/speechbrain).
+#
+# Quick install (CPU-only, local dev):
+#   pip install -r requirements.txt
+#
+# Kaggle / GPU (T4):
+#   pip install -r requirements.txt
+#   pip install mamba-ssm      # attempt after above; okay if it fails on CPU
+#
+# Python: 3.9 – 3.11 recommended  (3.12+ has limited mamba-ssm support)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Core — PyTorch ecosystem
+# (Kaggle already ships torch 2.x; pin loosely so it doesn't reinstall)
+# -----------------------------------------------------------------------------
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# -----------------------------------------------------------------------------
+# Speech / Audio processing
+# -----------------------------------------------------------------------------
+speechbrain>=1.0.0          # ECAPA-TDNN pre-trained weights + SpeechBrain utils
+librosa>=0.10.0             # offline audio analysis & visualisation
+soundfile>=0.12.0           # fast WAV I/O (backend for torchaudio)
+audiomentations>=0.34.0     # CPU-side waveform augmentation
+
+# -----------------------------------------------------------------------------
+# Room acoustics / RIR simulation  (Swarnim's augmentation pipeline)
+# -----------------------------------------------------------------------------
+pyroomacoustics>=0.7.3
+
+# -----------------------------------------------------------------------------
+# ONNX export & inference  (Sohini's eval/export.py)
+# -----------------------------------------------------------------------------
+onnx>=1.15.0
+onnxruntime>=1.17.0         # CPU inference + numerical verification
+# onnxruntime-gpu>=1.17.0   # uncomment on GPU machines instead of above
+
+# -----------------------------------------------------------------------------
+# Experiment tracking
+# -----------------------------------------------------------------------------
+wandb>=0.17.0
+
+# -----------------------------------------------------------------------------
+# Scientific computing
+# -----------------------------------------------------------------------------
+numpy>=1.24.0
+scipy>=1.11.0               # used by pyroomacoustics & librosa
+
+# -----------------------------------------------------------------------------
+# Visualisation & evaluation
+# -----------------------------------------------------------------------------
+matplotlib>=3.7.0           # DET curves, loss plots
+
+# -----------------------------------------------------------------------------
+# Real-time demo  (demo.py — sounddevice streams mic input)
+# -----------------------------------------------------------------------------
+sounddevice>=0.4.6
+
+# -----------------------------------------------------------------------------
+# Utilities
+# -----------------------------------------------------------------------------
+tqdm>=4.66.0                # progress bars in training loops
+pandas>=2.0.0               # ablation results CSV
+scikit-learn>=1.3.0         # EER computation, threshold sweeps
+
+# -----------------------------------------------------------------------------
+# Optional — Mamba SSM  (CUDA required; install separately after above)
+# Install with:  pip install mamba-ssm
+# Fails gracefully: models/temporal.py falls back to DilatedConvTemporalBlock
+# -----------------------------------------------------------------------------
+# mamba-ssm>=1.2.0          # uncomment ONLY if CUDA toolkit is available

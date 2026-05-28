@@ -48,22 +48,23 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.ruff_cache/
 
 # Translations
 *.mo
 *.pot
 
-# Django stuff:
+# Django stuff
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# Flask stuff:
+# Flask stuff
 instance/
 .webassets-cache
 
-# Scrapy stuff:
+# Scrapy stuff
 .scrapy
 
 # Sphinx documentation
@@ -78,9 +79,6 @@ target/
 # IPython
 profile_default/
 ipython_config.py
-
-# pyenv
-.python-version
 
 # pipenv
 Pipfile.lock
@@ -97,9 +95,11 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
-env/
+.env.*
+!.env.example
+.venv/
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
@@ -122,42 +122,58 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# uv
+.uv/
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
 *.sublime-workspace
 *.sublime-project
 
-# uv - fast Python package installer
-.uv/
+# OS
+.DS_Store
+Thumbs.db
 
+# ---------------------------------------------------------------------------
 # Project-specific
-# Data
+# ---------------------------------------------------------------------------
+
+# Data (keep data/*.py source)
 data/raw/
 data/processed/
+data/cache/
 datasets/
+
+# Audio scratch / enrollment recordings
+recordings/
 *.wav
 *.mp3
 *.flac
 
-# Models & Checkpoints
+# Models & checkpoints
 checkpoints/
+artifacts/
+exports/
+pretrained/
 models/pretrained/
 *.pt
 *.pth
 *.onnx
 *.pb
 *.tflite
+*.ckpt
 
-# Logs
-logs/
+# Experiment tracking
 wandb/
+runs/
+mlruns/
 lightning_logs/
+tensorboard/
+logs/
 
 # Outputs
 outputs/
@@ -169,11 +185,6 @@ experiments/
 *.tmp
 *.temp
 tmp/
-
-# OS files
-.DS_Store
-Thumbs.db
-.gitkeep
 
 # Pre-commit
 .pre-commit-config.yaml.bak
