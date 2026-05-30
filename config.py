@@ -34,7 +34,7 @@ ECAPA_SE_RATIO = 4
 # Training
 # ---------------------------------------------------------------------------
 BATCH_SIZE             = 128
-NUM_SPEAKERS_VOXCELEB  = 7205   # full VoxCeleb1+2
+NUM_SPEAKERS_VOXCELEB  = 1251   # VoxCeleb1 only (1,251 speakers)
 NUM_KEYWORDS_GSC       = 35     # Google Speech Commands v2
 
 # AAM-Softmax
