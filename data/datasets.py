@@ -147,7 +147,7 @@ class GSCDataset(Dataset):
         if sr != 16000:
             waveform = torchaudio.functional.resample(waveform, sr, 16000)
         if self.augmentor is not None:
-            waveform = self.augmentor(waveform, 16000)
+            waveform = self.augmentor(waveform)
         feat = self.transform(waveform)   # (80, T)
         return feat, label
 
