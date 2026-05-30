@@ -319,6 +319,8 @@ def main():
     parser.add_argument("--data-root",  default="/kaggle/input",
                         help="Root directory where datasets are mounted")
     parser.add_argument("--batch-size", type=int, default=config.BATCH_SIZE)
+    parser.add_argument("--num-workers", type=int, default=2,
+                    help="DataLoader workers. Use 0 to debug silent crashes.")
     args = parser.parse_args()
 
     device = get_device()
@@ -342,12 +344,16 @@ def main():
         vox_ds  = VoxCelebDataset(os.path.join(args.data_root, "voxceleb"),
                                    augmentor=augmentor)
 
+        nw = args.num_workers
+        pp = {"prefetch_factor": 2} if nw > 0 else {}
+        pw = nw > 0
+
         gsc_loader = DataLoader(gsc_ds, batch_size=args.batch_size,
-                         shuffle=True, num_workers=2, pin_memory=True,
-                         persistent_workers=True, prefetch_factor=2)
+                        shuffle=True, num_workers=nw, pin_memory=True,
+                        persistent_workers=pw, **pp)
         vox_loader = DataLoader(vox_ds, batch_size=args.batch_size,
-                                shuffle=True, num_workers=2, pin_memory=True,
-                                persistent_workers=True, prefetch_factor=2)
+                                shuffle=True, num_workers=nw, pin_memory=True,
+                                persistent_workers=pw, **pp)
 
     except Exception as e:
         print(f"⚠️  DataLoader setup failed: {e}")
