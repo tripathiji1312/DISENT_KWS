@@ -96,7 +96,12 @@ def train_phase1(
         start_epoch = load_checkpoint(resume_from, model, optimizer, device)
 
     if _WANDB_OK:
-        wandb.init(project="DISENT-KWS-v2", name="phase1", config=vars(config))
+        _cfg = {
+            k: v for k, v in vars(config).items()
+            if k.isupper()
+            and isinstance(v, (int, float, str, bool, list, tuple))
+        }
+        wandb.init(project="DISENT-KWS-v2", name="phase1", config=_cfg)
 
     print(f"\n{'='*55}")
     print(f"  Phase 1 — Pre-training  ({n_epochs} epochs)")
@@ -204,7 +209,12 @@ def train_phase2(
         start_epoch = load_checkpoint(resume_from, model, optimizer, device)
 
     if _WANDB_OK:
-        wandb.init(project="DISENT-KWS-v2", name="phase2", config=vars(config))
+        _cfg = {
+            k: v for k, v in vars(config).items()
+            if k.isupper()
+            and isinstance(v, (int, float, str, bool, list, tuple))
+        }
+        wandb.init(project="DISENT-KWS-v2", name="phase2", config=_cfg)
 
     print(f"\n{'='*55}")
     print(f"  Phase 2 — Joint Fine-tuning  ({n_epochs} epochs)")
