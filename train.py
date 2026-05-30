@@ -115,7 +115,7 @@ def train_phase1(
         epoch_loss_spk = 0.0
         n_batches      = 0
 
-        for feat, kw_label in gsc_loader:
+        for i, (feat, kw_label) in enumerate(gsc_loader):
             feat, kw_label = feat.to(device), kw_label.to(device)
             optimizer.zero_grad()
             z_phn, _ = model(feat)
@@ -126,8 +126,11 @@ def train_phase1(
             epoch_loss_kw += loss_kw.item()
             global_step   += 1
             n_batches     += 1
+            if (i + 1) % 50 == 0:
+                print(f"  Ep{epoch+1} GSC {i+1}/{len(gsc_loader)} loss={loss_kw.item():.4f}", flush=True)
 
-        for feat, spk_label in vox_loader:
+
+        for i, (feat, spk_label) in enumerate(vox_loader):
             feat, spk_label = feat.to(device), spk_label.to(device)
             optimizer.zero_grad()
             _, z_spk = model(feat)
@@ -138,6 +141,8 @@ def train_phase1(
             epoch_loss_spk += loss_spk.item()
             global_step    += 1
             n_batches      += 1
+            if (i + 1) % 50 == 0:
+                print(f"  Ep{epoch+1} VoxCeleb {i+1}/{len(vox_loader)} loss={loss_spk.item():.4f}", flush=True)
 
         scheduler.step()
         avg_kw  = epoch_loss_kw  / max(len(gsc_loader), 1)
@@ -338,9 +343,11 @@ def main():
                                    augmentor=augmentor)
 
         gsc_loader = DataLoader(gsc_ds, batch_size=args.batch_size,
-                                 shuffle=True, num_workers=4, pin_memory=True)
+                         shuffle=True, num_workers=2, pin_memory=True,
+                         persistent_workers=True, prefetch_factor=2)
         vox_loader = DataLoader(vox_ds, batch_size=args.batch_size,
-                                 shuffle=True, num_workers=4, pin_memory=True)
+                                shuffle=True, num_workers=2, pin_memory=True,
+                                persistent_workers=True, prefetch_factor=2)
 
     except Exception as e:
         print(f"⚠️  DataLoader setup failed: {e}")
