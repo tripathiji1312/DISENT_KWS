@@ -43,6 +43,8 @@ def save_checkpoint(state: dict, path: str | Path, tag: str = "") -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     torch.save(state, path)
     print(f"💾  Checkpoint saved → {path}  {tag}")
+    if _WANDB_OK:                        # ← add this
+        wandb.save(str(path))
 
 
 def load_checkpoint(path: str | Path, model: nn.Module,
