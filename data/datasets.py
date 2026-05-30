@@ -57,33 +57,99 @@ class LFBETransform:
         return log_mel.squeeze(0)
 
 
-class GSCDataset(Dataset):
-    """Google Speech Commands v2 — 35 words, ~105K utterances"""
-    def __init__(self, root, subset='training', transform: Optional[LFBETransform] = None, augmentor=None):
-        self.dataset = torchaudio.datasets.SPEECHCOMMANDS(root, download=True, subset=subset)
-        self.transform = transform or LFBETransform()
-        self.augmentor = augmentor
-        # Collect labels from dataset examples
-        labels = set()
-        for i in range(len(self.dataset)):
-            try:
-                _, _, label, *_ = self.dataset[i]
-                labels.add(label)
-            except Exception:
-                continue
-        self.labels = sorted(list(labels))
+import os
+import torch
+import torchaudio
+from torch.utils.data import Dataset
 
-    def __getitem__(self, idx):
-        waveform, sr, label, *_ = self.dataset[idx]
-        if self.augmentor:
-            waveform = self.augmentor(waveform)
-        features = self.transform(waveform)
-        label_idx = self.labels.index(label)
-        return features, label_idx
+# GSC v2: 35 classes (all words in the dataset)
+GSC_CLASSES = [
+    "backward", "bed", "bird", "cat", "dog", "down", "eight", "five",
+    "follow", "forward", "four", "go", "happy", "house", "learn", "left",
+    "marvin", "nine", "no", "off", "on", "one", "right", "seven", "sheila",
+    "six", "stop", "three", "tree", "two", "up", "visual", "wow", "yes", "zero"
+]
+GSC_LABEL_MAP = {word: i for i, word in enumerate(GSC_CLASSES)}
+
+
+class GSCDataset(Dataset):
+    """
+    Google Speech Commands v2 — reads directly from pre-extracted folder.
+    Works regardless of whether Kaggle input has the torchaudio subfolder
+    layout or a flat word-folder layout.
+    """
+
+    def __init__(self, root: str, subset: str = "training",
+                 augmentor=None, transform=None):
+        super().__init__()
+        self.root      = self._resolve_root(root)
+        self.augmentor = augmentor
+        self.transform = transform or LFBETransform()
+        self.samples   = []   # list of (wav_path, label_int)
+
+        # Load the official split file if present, else do 80/10/10 split
+        split_file = os.path.join(self.root, f"{subset}_list.txt")  # validation_list.txt etc.
+        val_file   = os.path.join(self.root, "validation_list.txt")
+        test_file  = os.path.join(self.root, "testing_list.txt")
+
+        val_set  = self._read_list(val_file)
+        test_set = self._read_list(test_file)
+
+        for word in GSC_CLASSES:
+            word_dir = os.path.join(self.root, word)
+            if not os.path.isdir(word_dir):
+                continue
+            label = GSC_LABEL_MAP[word]
+            for fname in os.listdir(word_dir):
+                if not fname.endswith(".wav"):
+                    continue
+                rel = f"{word}/{fname}"
+                if subset == "validation" and rel not in val_set:
+                    continue
+                if subset == "testing" and rel not in test_set:
+                    continue
+                if subset == "training" and (rel in val_set or rel in test_set):
+                    continue
+                self.samples.append((os.path.join(word_dir, fname), label))
+
+        print(f"  GSCDataset [{subset}]: {len(self.samples):,} samples "
+              f"from {self.root}")
+
+    @staticmethod
+    def _resolve_root(root: str) -> str:
+        """Handle both flat and torchaudio-nested layouts."""
+        for candidate in [
+            root,
+            os.path.join(root, "speech_commands_v0.02"),
+            os.path.join(root, "SpeechCommands", "speech_commands_v0.02"),
+        ]:
+            if os.path.isdir(candidate) and os.path.isdir(
+                    os.path.join(candidate, "yes")):   # sanity-check a word folder
+                return candidate
+        raise FileNotFoundError(
+            f"Could not locate GSC word folders under {root}. "
+            f"Run the diagnostic cell to inspect the structure."
+        )
+
+    @staticmethod
+    def _read_list(path: str) -> set:
+        if not os.path.exists(path):
+            return set()
+        with open(path) as f:
+            return {line.strip() for line in f}
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.samples)
 
+    def __getitem__(self, idx):
+        wav_path, label = self.samples[idx]
+        waveform, sr = torchaudio.load(wav_path)
+        if sr != 16000:
+            waveform = torchaudio.functional.resample(waveform, sr, 16000)
+        if self.augmentor is not None:
+            waveform = self.augmentor(waveform, 16000)
+        feat = self.transform(waveform)   # (80, T)
+        return feat, label
 
 class VoxCelebDataset(Dataset):
     """VoxCeleb — full 7205 speakers (Kaggle-hosted)"""
