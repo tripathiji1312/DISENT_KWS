@@ -41,12 +41,31 @@ def get_device() -> str:
     return d
 
 
-def save_checkpoint(state: dict, path: str | Path, tag: str = "") -> None:
+def save_checkpoint(state: dict, path: str | Path, tag: str = "", upload_unique: bool = False) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
+    
+    # 1. Save the standard file locally (e.g., checkpoints/phase1_best.pt)
     torch.save(state, path)
-    print(f"💾  Checkpoint saved → {path}  {tag}")
-    if _WANDB_OK:                        # ← add this
-        wandb.save(str(path))
+    print(f"💾  Checkpoint saved locally → {path}  {tag}")
+    
+    if _WANDB_OK:
+        if upload_unique:
+            # 2. Generate a unique name with the epoch number for W&B
+            epoch = state.get("epoch", 0)
+            base_name = Path(path).stem          # e.g., "phase1_best"
+            ext = Path(path).suffix              # e.g., ".pt"
+            
+            unique_path = Path(path).parent / f"{base_name}_epoch{epoch:02d}{ext}"
+            
+            # Save the unique copy
+            torch.save(state, unique_path)
+            
+            # Tell W&B to save the unique file (it will upload immediately)
+            wandb.save(str(unique_path))
+            print(f"☁️  Unique copy registered with W&B for instant upload → {unique_path}")
+        else:
+            # Normal periodic files (like "phase1_epoch10.pt") are already unique
+            wandb.save(str(path))
 
 
 def load_checkpoint(path, model, optimizer=None, device="cpu",
@@ -172,6 +191,7 @@ def train_phase1(
                 f"{save_dir}/phase1_epoch{epoch+1:02d}.pt",
                 tag=f"loss={total:.4f}"
             )
+# Change this block inside train_phase1:
         if total < best_loss:
             best_loss = total
             save_checkpoint(
@@ -179,7 +199,8 @@ def train_phase1(
                  "optimizer": optimizer.state_dict(),
                  "aam_kw": aam_kw.state_dict(), "aam_spk": aam_spk.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase1_best.pt",
-                tag="(best)"
+                tag="(best)",
+                upload_unique=True  # <--- ADD THIS
             )
 
     print(f"\n✅  Phase 1 complete — best loss: {best_loss:.4f}\n")
@@ -300,13 +321,15 @@ def train_phase2(
                 f"{save_dir}/phase2_epoch{epoch+1:02d}.pt",
                 tag=f"total={avg['total']:.4f}"
             )
+# Change this block inside train_phase2:
         if avg["total"] < best_loss:
             best_loss = avg["total"]
             save_checkpoint(
                 {"epoch": epoch + 1, "model": model.state_dict(),
                  "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase2_best.pt",
-                tag="(best)"
+                tag="(best)",
+                upload_unique=True  # <--- ADD THIS
             )
 
     print(f"\n✅  Phase 2 complete — best loss: {best_loss:.4f}\n")
