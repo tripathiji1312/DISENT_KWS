@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from training import scheduler
+
 sys.path.insert(0, os.path.dirname(__file__))
 import config
 from models.disent_v2 import DISENT_KWS_v2
@@ -47,12 +49,18 @@ def save_checkpoint(state: dict, path: str | Path, tag: str = "") -> None:
         wandb.save(str(path))
 
 
-def load_checkpoint(path: str | Path, model: nn.Module,
-                    optimizer=None, device: str = "cpu") -> int:
+def load_checkpoint(path, model, optimizer=None, device="cpu",
+                    aam_kw=None, aam_spk=None, scheduler=None) -> int:
     ckpt = torch.load(path, map_location=device)
     model.load_state_dict(ckpt["model"], strict=False)
     if optimizer and "optimizer" in ckpt:
         optimizer.load_state_dict(ckpt["optimizer"])
+    if aam_kw and "aam_kw" in ckpt:
+        aam_kw.load_state_dict(ckpt["aam_kw"])
+    if aam_spk and "aam_spk" in ckpt:
+        aam_spk.load_state_dict(ckpt["aam_spk"])
+    if scheduler and "scheduler" in ckpt:
+        scheduler.load_state_dict(ckpt["scheduler"])
     epoch = ckpt.get("epoch", 0)
     print(f"📂  Resumed from {path}  (epoch {epoch})")
     return epoch
@@ -95,7 +103,8 @@ def train_phase1(
 
     start_epoch = 0
     if resume_from and os.path.exists(resume_from):
-        start_epoch = load_checkpoint(resume_from, model, optimizer, device)
+        start_epoch = load_checkpoint(resume_from, model, optimizer, device,
+                                    aam_kw=aam_kw, aam_spk=aam_spk)
 
     if _WANDB_OK:
         _cfg = {
@@ -159,7 +168,7 @@ def train_phase1(
             save_checkpoint(
                 {"epoch": epoch + 1, "model": model.state_dict(),
                  "optimizer": optimizer.state_dict(),
-                 "aam_kw": aam_kw.state_dict(), "aam_spk": aam_spk.state_dict()},
+                 "aam_kw": aam_kw.state_dict(), "aam_spk": aam_spk.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase1_epoch{epoch+1:02d}.pt",
                 tag=f"loss={total:.4f}"
             )
@@ -168,7 +177,7 @@ def train_phase1(
             save_checkpoint(
                 {"epoch": epoch + 1, "model": model.state_dict(),
                  "optimizer": optimizer.state_dict(),
-                 "aam_kw": aam_kw.state_dict(), "aam_spk": aam_spk.state_dict()},
+                 "aam_kw": aam_kw.state_dict(), "aam_spk": aam_spk.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase1_best.pt",
                 tag="(best)"
             )
@@ -287,7 +296,7 @@ def train_phase2(
         if (epoch + 1) % 5 == 0:
             save_checkpoint(
                 {"epoch": epoch + 1, "model": model.state_dict(),
-                 "optimizer": optimizer.state_dict()},
+                 "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase2_epoch{epoch+1:02d}.pt",
                 tag=f"total={avg['total']:.4f}"
             )
@@ -295,7 +304,7 @@ def train_phase2(
             best_loss = avg["total"]
             save_checkpoint(
                 {"epoch": epoch + 1, "model": model.state_dict(),
-                 "optimizer": optimizer.state_dict()},
+                 "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict()},
                 f"{save_dir}/phase2_best.pt",
                 tag="(best)"
             )
