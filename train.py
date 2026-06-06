@@ -72,14 +72,28 @@ def load_checkpoint(path, model, optimizer=None, device="cpu",
                     aam_kw=None, aam_spk=None, scheduler=None) -> int:
     ckpt = torch.load(path, map_location=device)
     model.load_state_dict(ckpt["model"], strict=False)
+
+    # Only load optimizer if parameter group sizes match
+    # (they differ when crossing Phase 1 → Phase 2)
     if optimizer and "optimizer" in ckpt:
-        optimizer.load_state_dict(ckpt["optimizer"])
+        try:
+            optimizer.load_state_dict(ckpt["optimizer"])
+        except ValueError as e:
+            print(f"⚠️  Optimizer state skipped (cross-phase resume): {e}")
+            print("    Model weights loaded — optimizer starts fresh (expected for Phase 2)")
+
     if aam_kw and "aam_kw" in ckpt:
         aam_kw.load_state_dict(ckpt["aam_kw"])
     if aam_spk and "aam_spk" in ckpt:
         aam_spk.load_state_dict(ckpt["aam_spk"])
+
+    # Only load scheduler if optimizer loaded successfully
     if scheduler and "scheduler" in ckpt:
-        scheduler.load_state_dict(ckpt["scheduler"])
+        try:
+            scheduler.load_state_dict(ckpt["scheduler"])
+        except Exception as e:
+            print(f"⚠️  Scheduler state skipped: {e}")
+
     epoch = ckpt.get("epoch", 0)
     print(f"📂  Resumed from {path}  (epoch {epoch})")
     return epoch
