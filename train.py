@@ -309,7 +309,8 @@ def train_phase2(
 
             z_phn_v, z_spk_v = model(feat_vox)
             loss_spk    = aam_spk(z_spk_v, spk_label)
-            loss_disent = disent(z_phn_v, z_spk_v, spk_label, kw_label, lam)
+            B_v = z_phn_v.size(0)   # VoxCeleb batch size (may differ from GSC if not using drop_last)
+            loss_disent = disent(z_phn_v, z_spk_v, spk_label, kw_label[:B_v], lam)
 
             # Clamp disent so a CLUB spike never drowns kw/spk gradients
             loss_disent_clamped = torch.clamp(loss_disent, min=-5.0, max=5.0)
@@ -419,11 +420,11 @@ def main():
         pw = nw > 0
 
         gsc_loader = DataLoader(gsc_ds, batch_size=args.batch_size,
-                        shuffle=True, num_workers=nw, pin_memory=True,
-                        persistent_workers=pw, **pp)
+                shuffle=True, num_workers=nw, pin_memory=True,
+                persistent_workers=pw, drop_last=True, **pp)
         vox_loader = DataLoader(vox_ds, batch_size=args.batch_size,
                                 shuffle=True, num_workers=nw, pin_memory=True,
-                                persistent_workers=pw, **pp)
+                                persistent_workers=pw, drop_last=True, **pp)
 
     except Exception as e:
         print(f"⚠️  DataLoader setup failed: {e}")
