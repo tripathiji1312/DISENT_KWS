@@ -73,21 +73,18 @@ def load_checkpoint(path, model, optimizer=None, device="cpu",
     ckpt = torch.load(path, map_location=device)
     model.load_state_dict(ckpt["model"], strict=False)
 
-    # Only load optimizer if parameter group sizes match
-    # (they differ when crossing Phase 1 → Phase 2)
     if optimizer and "optimizer" in ckpt:
         try:
             optimizer.load_state_dict(ckpt["optimizer"])
         except ValueError as e:
             print(f"⚠️  Optimizer state skipped (cross-phase resume): {e}")
-            print("    Model weights loaded — optimizer starts fresh (expected for Phase 2)")
+            print("    Optimizer starts fresh — expected when crossing Phase 1 → 2")
 
     if aam_kw and "aam_kw" in ckpt:
         aam_kw.load_state_dict(ckpt["aam_kw"])
     if aam_spk and "aam_spk" in ckpt:
         aam_spk.load_state_dict(ckpt["aam_spk"])
 
-    # Only load scheduler if optimizer loaded successfully
     if scheduler and "scheduler" in ckpt:
         try:
             scheduler.load_state_dict(ckpt["scheduler"])
@@ -257,7 +254,17 @@ def train_phase2(
 
     start_epoch = 0
     if resume_from and os.path.exists(resume_from):
-        start_epoch = load_checkpoint(resume_from, model, optimizer, device)
+        loaded_epoch = load_checkpoint(
+            resume_from, model, optimizer, device,
+            aam_kw=aam_kw, aam_spk=aam_spk,   # warm-start softmax heads
+        )
+        # Cross-phase guard: Phase 1 epoch counter must not carry into Phase 2
+        if loaded_epoch >= n_epochs:
+            print(f"⚠️  Cross-phase resume: loaded epoch {loaded_epoch} "
+                f"≥ n_epochs {n_epochs} — resetting Phase 2 counter to 0")
+            start_epoch = 0
+        else:
+            start_epoch = loaded_epoch  # mid-Phase-2 resume works normally
 
     if _WANDB_OK:
         _cfg = {
