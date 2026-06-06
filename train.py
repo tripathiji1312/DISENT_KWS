@@ -4,6 +4,7 @@ import math
 import os
 import sys
 import time
+from itertools import cycle
 from pathlib import Path
 
 import torch
@@ -258,19 +259,17 @@ def train_phase2(
             resume_from, model, optimizer, device,
             aam_kw=aam_kw, aam_spk=aam_spk,   # warm-start softmax heads
         )
-        # Cross-phase guard: detect whether this is a Phase 1 checkpoint
-        # (epoch counter from Phase 1 must NOT carry into Phase 2).
-        # A checkpoint is treated as a mid-Phase-2 resume ONLY if the file
-        # path explicitly contains "phase2" — otherwise always start fresh.
+        # Cross-phase guard: Phase 1 checkpoints must NOT carry their epoch
+        # counter into Phase 2. Only treat as mid-Phase-2 resume if the path
+        # explicitly contains "phase2".
         is_phase2_resume = "phase2" in str(resume_from)
         if is_phase2_resume and loaded_epoch < n_epochs:
             start_epoch = loaded_epoch
             print(f"↩️   Mid-Phase-2 resume from epoch {loaded_epoch}")
         else:
             start_epoch = 0
-            print(f"🔄  Cross-phase resume (Phase 1 → Phase 2): "
-                  f"loaded weights from epoch {loaded_epoch}, "
-                  f"Phase 2 epoch counter reset to 0")
+            print(f"🔄  Cross-phase resume: loaded weights from epoch {loaded_epoch}, "
+                  f"Phase 2 counter reset to 0")
 
     if _WANDB_OK:
         _cfg = {
@@ -292,8 +291,9 @@ def train_phase2(
         epoch_losses: dict[str, float] = {k: 0.0 for k in
                          ["kw", "spk", "disent", "reject", "total"]}
 
+        # cycle() repeats lp_loader so it never truncates the longer GSC/VoxCeleb loaders
         for (feat_gsc, kw_label), (feat_vox, spk_label), (anchor, pos, neg, _) in zip(
-        gsc_loader, vox_loader, libriphrase_loader):
+                gsc_loader, vox_loader, cycle(libriphrase_loader)):
             feat_gsc  = feat_gsc.to(device)
             feat_vox  = feat_vox.to(device)
             kw_label  = kw_label.to(device)
@@ -311,7 +311,9 @@ def train_phase2(
             loss_spk    = aam_spk(z_spk_v, spk_label)
             loss_disent = disent(z_phn_v, z_spk_v, spk_label, kw_label, lam)
 
-            loss_A = loss_kw + loss_spk + 0.5 * loss_disent
+            # Clamp disent so a CLUB spike never drowns kw/spk gradients
+            loss_disent_clamped = torch.clamp(loss_disent, min=-5.0, max=5.0)
+            loss_A = loss_kw + loss_spk + 0.5 * loss_disent_clamped
             loss_A.backward()
             nn.utils.clip_grad_norm_(params, 5.0)
             optimizer.step()

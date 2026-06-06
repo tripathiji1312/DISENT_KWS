@@ -63,22 +63,29 @@ class CLUB(nn.Module):
         )
 
     def forward(self, z_spk: torch.Tensor, z_phn: torch.Tensor) -> torch.Tensor:
-        mu = self.mu_net(z_spk)
-        logvar = self.logvar_net(z_spk)
-        
-        # Clip logvar to prevent division by zero or large exponents
-        logvar = torch.clamp(logvar, min=-10.0, max=10.0)
+        # Normalize inputs to unit sphere for numerical stability
+        z_spk_n = F.normalize(z_spk, dim=-1)
+        z_phn_n = F.normalize(z_phn, dim=-1)
 
-        # positive sample log ratio
-        pos = -((mu - z_phn) ** 2) / (2.0 * torch.exp(logvar) + 1e-6) - 0.5 * logvar
-        
-        # negative sample log ratio (shuffle z_phn over batch dimension)
-        z_phn_shuffle = z_phn[torch.randperm(z_phn.size(0), device=z_phn.device)]
-        neg = -((mu - z_phn_shuffle) ** 2) / (2.0 * torch.exp(logvar) + 1e-6) - 0.5 * logvar
-        
-        # Contrastive upper bound estimation
-        mi_upper = pos.sum(dim=-1).mean() - neg.sum(dim=-1).mean()
-        return mi_upper
+        mu     = self.mu_net(z_spk_n)
+        logvar = self.logvar_net(z_spk_n)
+
+        # Tight clamp: keep variance in [e^-4, e^4] = [0.018, 54.6]
+        logvar = torch.clamp(logvar, min=-4.0, max=4.0)
+        var    = torch.exp(logvar) + 1e-6
+
+        # Positive log-likelihood
+        pos = -((mu - z_phn_n) ** 2) / (2.0 * var) - 0.5 * logvar
+
+        # Negative log-likelihood (shuffled pairs)
+        z_phn_shuffle = z_phn_n[torch.randperm(z_phn_n.size(0), device=z_phn_n.device)]
+        neg = -((mu - z_phn_shuffle) ** 2) / (2.0 * var) - 0.5 * logvar
+
+        # Mean over embedding dim first, then over batch (prevents dim-sum explosion)
+        mi_upper = pos.mean(dim=-1).mean() - neg.mean(dim=-1).mean()
+
+        # Hard clamp on final value so CLUB never dominates total loss
+        return torch.clamp(mi_upper, min=-10.0, max=10.0)
 
 
 class DisentanglementLoss(nn.Module):
