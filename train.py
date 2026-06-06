@@ -287,44 +287,51 @@ def train_phase2(
                          ["kw", "spk", "disent", "reject", "total"]}
 
         for (feat_gsc, kw_label), (feat_vox, spk_label), (anchor, pos, neg, _) in zip(
-                gsc_loader, vox_loader, libriphrase_loader
-        ):
-            feat_gsc   = feat_gsc.to(device)
-            feat_vox   = feat_vox.to(device)
-            kw_label   = kw_label.to(device)
-            spk_label  = spk_label.to(device)
-            anchor     = anchor.to(device)
-            pos        = pos.to(device)
-            neg        = neg.to(device)
+        gsc_loader, vox_loader, libriphrase_loader):
+            feat_gsc  = feat_gsc.to(device)
+            feat_vox  = feat_vox.to(device)
+            kw_label  = kw_label.to(device)
+            spk_label = spk_label.to(device)
+            anchor    = anchor.to(device)
+            pos       = pos.to(device)
+            neg       = neg.to(device)
 
+            # ── Step A: classification + disentanglement (2 forward passes) ───
             optimizer.zero_grad()
-
             z_phn_g, z_spk_g = model(feat_gsc)
             loss_kw = aam_kw(z_phn_g, kw_label)
 
             z_phn_v, z_spk_v = model(feat_vox)
-            loss_spk = aam_spk(z_spk_v, spk_label)
-
+            loss_spk    = aam_spk(z_spk_v, spk_label)
             loss_disent = disent(z_phn_v, z_spk_v, spk_label, kw_label, lam)
 
-            anc_phn, _   = model(anchor)
-            pos_phn, _   = model(pos)
-            neg_phn, _   = model(neg)
-            loss_reject  = rejection_loss(anc_phn, pos_phn, neg_phn,
-                                           config.REJECTION_MARGIN)
-
-            total = (loss_kw
-                     + loss_spk
-                     + 0.5 * loss_disent
-                     + 0.3 * loss_reject)
-
-            total.backward()
+            loss_A = loss_kw + loss_spk + 0.5 * loss_disent
+            loss_A.backward()
             nn.utils.clip_grad_norm_(params, 5.0)
             optimizer.step()
 
-            for k, v in [("kw", loss_kw), ("spk", loss_spk),
-                         ("disent", loss_disent), ("reject", loss_reject),
-                         ("total", total)]:
+            # Explicitly free Step A's activations before Step B
+            del z_phn_g, z_spk_g, z_phn_v, z_spk_v
+            torch.cuda.empty_cache()
+
+            # ── Step B: rejection / triplet loss (3 forward passes) ──────────
+            optimizer.zero_grad()
+            anc_phn, _ = model(anchor)
+            pos_phn, _ = model(pos)
+            neg_phn, _ = model(neg)
+            loss_reject = rejection_loss(anc_phn, pos_phn, neg_phn,
+                                        config.REJECTION_MARGIN)
+            (0.3 * loss_reject).backward()
+            nn.utils.clip_grad_norm_(params, 5.0)
+            optimizer.step()
+
+            # ── Logging (detach so no graph is kept) ─────────────────────────
+            total = loss_A.detach() + 0.3 * loss_reject.detach()
+            for k, v in [("kw",     loss_kw),
+                        ("spk",    loss_spk),
+                        ("disent", loss_disent),
+                        ("reject", loss_reject),
+                        ("total",  total)]:
                 epoch_losses[k] += v.item()
             global_step += 1
 
