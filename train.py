@@ -258,13 +258,19 @@ def train_phase2(
             resume_from, model, optimizer, device,
             aam_kw=aam_kw, aam_spk=aam_spk,   # warm-start softmax heads
         )
-        # Cross-phase guard: Phase 1 epoch counter must not carry into Phase 2
-        if loaded_epoch >= n_epochs:
-            print(f"⚠️  Cross-phase resume: loaded epoch {loaded_epoch} "
-                f"≥ n_epochs {n_epochs} — resetting Phase 2 counter to 0")
-            start_epoch = 0
+        # Cross-phase guard: detect whether this is a Phase 1 checkpoint
+        # (epoch counter from Phase 1 must NOT carry into Phase 2).
+        # A checkpoint is treated as a mid-Phase-2 resume ONLY if the file
+        # path explicitly contains "phase2" — otherwise always start fresh.
+        is_phase2_resume = "phase2" in str(resume_from)
+        if is_phase2_resume and loaded_epoch < n_epochs:
+            start_epoch = loaded_epoch
+            print(f"↩️   Mid-Phase-2 resume from epoch {loaded_epoch}")
         else:
-            start_epoch = loaded_epoch  # mid-Phase-2 resume works normally
+            start_epoch = 0
+            print(f"🔄  Cross-phase resume (Phase 1 → Phase 2): "
+                  f"loaded weights from epoch {loaded_epoch}, "
+                  f"Phase 2 epoch counter reset to 0")
 
     if _WANDB_OK:
         _cfg = {
