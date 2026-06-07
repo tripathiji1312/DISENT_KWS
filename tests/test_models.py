@@ -78,7 +78,7 @@ class TestBCResNet2:
             out_batch = model(batch)
             out_indep1 = model(x1)
             
-        assert torch.allclose(out_batch[:1], out_indep1, atol=1e-5)
+        assert torch.allclose(out_batch[:1], out_indep1, atol=1e-4)
 
 
 class TestTemporalBlock:

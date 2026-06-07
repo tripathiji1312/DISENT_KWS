@@ -2,10 +2,16 @@
 Run: pytest tests/test_dataloaders.py -v
 """
 
+import sys
+import os
 import tempfile
+import unittest.mock
 import pytest
 import torch
 
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config
 from data.datasets import LFBETransform, GSCDataset, VoxCelebDataset, LibriPhraseDataset
 
 
@@ -83,15 +89,17 @@ class TestGSCDataset:
     def test_gsc_dataset_init_empty(self, transform):
         """Test GSCDataset on empty directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            ds = GSCDataset(root=tmpdir, subset='training', transform=transform)
+            with unittest.mock.patch.object(GSCDataset, '_resolve_root', return_value=tmpdir):
+                ds = GSCDataset(root=tmpdir, subset='training', transform=transform)
             # Empty dir = 0 samples
             assert len(ds) >= 0, "Dataset length should be non-negative"
 
     def test_gsc_dataset_structure(self, transform):
         """Test GSCDataset has required attributes."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            ds = GSCDataset(root=tmpdir, subset='training', transform=transform)
-            assert hasattr(ds, 'labels'), "GSCDataset should have 'labels' attribute"
+            with unittest.mock.patch.object(GSCDataset, '_resolve_root', return_value=tmpdir):
+                ds = GSCDataset(root=tmpdir, subset='training', transform=transform)
+            assert hasattr(ds, 'samples'), "GSCDataset should have 'samples' attribute"
             assert hasattr(ds, 'transform'), "GSCDataset should have 'transform' attribute"
 
 

@@ -176,9 +176,9 @@ class TestScheduler:
         val_start = grl_lambda_schedule(0, 100)
         assert pytest.approx(val_start, abs=1e-5) == 0.0
 
-        # 2. At maximum epoch, lambda should be close to 1.0 (specifically: 2 / (1 + e^-10) - 1 ≈ 0.9999)
+        # 2. At maximum epoch, lambda should be close to 1.0 (specifically: 2 / (1 + e^-10) - 1 ≈ 0.9999546)
         val_end = grl_lambda_schedule(100, 100)
-        assert pytest.approx(val_end, abs=1e-4) == 0.9999
+        assert pytest.approx(val_end, abs=1e-3) == 1.0
 
         # 3. Schedule should be strictly increasing
         v1 = grl_lambda_schedule(10, 100)

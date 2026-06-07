@@ -63,9 +63,10 @@ def augment_enrollment(
     waveforms: Sequence[torch.Tensor],
     n_total: int = 30,
 ) -> list[torch.Tensor]:
-    assert len(waveforms) >= 5, (
-        f"Need at least 5 enrollment samples, got {len(waveforms)}"
-    )
+    if len(waveforms) < 5:
+        raise ValueError(
+            f"Need at least 5 enrollment samples, got {len(waveforms)}"
+        )
     target_len = waveforms[0].shape[-1]
     variants: list[torch.Tensor] = list(waveforms)
 
@@ -160,9 +161,10 @@ def enroll_user(
     n_augmented:            int   = 30,
     device:                 str   = "cpu",
 ) -> dict:
-    assert len(keyword_audio_paths) >= 5, (
-        f"Need ≥ 5 enrollment recordings, got {len(keyword_audio_paths)}"
-    )
+    if len(keyword_audio_paths) < 5:
+        raise ValueError(
+            f"Need ≥ 5 enrollment recordings, got {len(keyword_audio_paths)}"
+        )
 
     # 1. Load raw waveforms
     print(f"🔊  Loading {len(keyword_audio_paths)} enrollment recordings …")
