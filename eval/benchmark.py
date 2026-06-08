@@ -193,25 +193,25 @@ def evaluate_joint_system(
         if spk_lbl not in spk_protos or kw_lbl not in kw_protos:
             continue
             
-        p_spk = spk_protos[spk_lbl]
-        p_kw = kw_protos[kw_lbl]
+        p_spk = spk_protos[spk_lbl].to(device)
+        p_kw = kw_protos[kw_lbl].to(device)
         
         # Positive Trial: target speaker's embedding and keyword's embedding
-        z_spk_pos = spk_embs[i:i+1]
-        z_phn_pos = phn_embs[i:i+1]
+        z_spk_pos = spk_embs[i:i+1].to(device)
+        z_phn_pos = phn_embs[i:i+1].to(device)
         
         score_pos, _, _ = model.scorer(z_phn_pos, z_spk_pos, p_kw, p_spk)
         pos_scores.append(score_pos.item())
         
         # Keyword Confuser: correct speaker, wrong keyword prototype (different class)
         wrong_kw_lbl = random.choice([lbl for lbl in kw_protos.keys() if lbl != kw_lbl])
-        p_kw_wrong = kw_protos[wrong_kw_lbl]
+        p_kw_wrong = kw_protos[wrong_kw_lbl].to(device)
         score_kw_conf, _, _ = model.scorer(z_phn_pos, z_spk_pos, p_kw_wrong, p_spk)
         kw_confuser_scores.append(score_kw_conf.item())
         
         # Speaker Confuser: wrong speaker embedding, correct keyword
         wrong_spk_idx = (i + 1) % n_eval_pairs
-        z_spk_wrong = spk_embs[wrong_spk_idx:wrong_spk_idx+1]
+        z_spk_wrong = spk_embs[wrong_spk_idx:wrong_spk_idx+1].to(device)
         score_spk_conf, _, _ = model.scorer(z_phn_pos, z_spk_wrong, p_kw, p_spk)
         spk_confuser_scores.append(score_spk_conf.item())
         
