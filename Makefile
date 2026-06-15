@@ -18,7 +18,7 @@ test:
 	uv run pytest tests/ -v --tb=short
 
 test-cov:
-	uv run pytest tests/ -v --tb=short --cov=data --cov=models --cov=training --cov-report=html --cov-report=term
+	uv run pytest tests/ -v --tb=short --cov=src/data --cov=src/models --cov=src/training --cov-report=html --cov-report=term
 	@echo "Coverage report: htmlcov/index.html"
 
 test-v:
@@ -31,11 +31,11 @@ test-dataloaders:
 	uv run pytest tests/test_dataloaders.py -v --tb=short
 
 lint:
-	uv run flake8 data/ models/ training/ --max-line-length=120 --count
+	uv run flake8 src/data/ src/models/ src/training/ --max-line-length=120 --count
 
 format:
-	uv run black data/ models/ training/ tests/
-	uv run isort data/ models/ training/ tests/
+	uv run black src/data/ src/models/ src/training/ tests/
+	uv run isort src/data/ src/models/ src/training/ tests/
 
 install:
 	uv sync --all-extras

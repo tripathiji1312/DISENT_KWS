@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 import config
 from training.losses import AAMSoftmax, PrototypicalLoss, rejection_loss, KDLoss
 from training.disentangle import CLUB, DisentanglementLoss, grad_reverse, AdversarialHead
