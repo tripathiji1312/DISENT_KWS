@@ -1,4 +1,4 @@
-# DISENT-KWS v2: Speech Disentanglement for Robust Custom Word Detection
+# DISENT-KWS: Speech Disentanglement for Robust Custom Word Detection
 
 - **Problem Statement Number** - 4
 - **Problem Statement Title** - Designing a Robust AI System for Speech Disentanglement
