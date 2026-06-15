@@ -4,7 +4,7 @@
 - **Problem Statement Title** - Designing a Robust AI System for Speech Disentanglement
 - **Team name** - Noisy AF
 - **Team members (Names)** - Sohini Banerjee, Swarnim Tripathi
-- **Institute/College Name** - Vellore Institute of Technology, Chennai
+- **Institute/College Name** - VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
 - **Final Presentation Google Drive Link** - [Google Drive Presentation Link](https://drive.google.com/open?id=123_noisy_af_presentation_placeholder)
 - **Full Submission Demo Video Link** - [Full Submission Demo Video Link](https://youtube.com/watch?v=123_noisy_af_demo_placeholder)
 - **Setup & Result Reproducibility Video Link** - [Setup & Result Reproducibility Video Link](https://youtube.com/watch?v=123_noisy_af_setup_placeholder)
