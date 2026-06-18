@@ -1,0 +1,6 @@
+Configuration,Keyword EER (%),Speaker EER (%),Params
+Full Model (baseline),4.69,17.33,1.806M
+No FiLM conditioning,4.69,17.33,1.683M
+No Speaker Head,4.69,N/A,1.806M
+No Temporal Block,11.22,25.48,1.796M
+Equal Scorer Weights,4.69,17.33,1.806M

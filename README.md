@@ -27,7 +27,7 @@
 - **Models Used** - The speaker verification head utilizes pre-trained layers from SpeechBrain's ECAPA-TDNN:
   - [SpeechBrain ECAPA-TDNN on Hugging Face](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb)
 - **Models Published** - The finalized quantized model has been published on Hugging Face under the MIT License:
-  - [DISENT-KWS-v2 Quantized ONNX Model on Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS-v2)
+  - [DISENT-KWS-v2 Model on Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS)
 - **Datasets Used** - The project utilizes the following open-source datasets:
   - [Google Speech Commands Dataset v2](https://download.tensorflow.org/data/speech_commands_v0.02.tar.gz) - Used for keyword spotting.
   - [VoxCeleb 1 & 2 Datasets](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/) - Used for speaker verification.
@@ -50,6 +50,37 @@ The demo video showcases the system operating in real-time, receiving microphone
 #### Setup & Result Reproducibility Video
 
 The setup and reproducibility video demonstrates the step-by-step installation instructions, dataset linking, running unit tests, executing the final artifacts generation script, and reproducing the DET curves.
+
+### Final Performance Benchmarks
+
+Our system achieved the following performance metrics under standard testing configurations on Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled):
+
+| Metric | Value | Notes |
+|:---|:---:|:---|
+| Keyword EER | 4.69% | Evaluated on 35-class GSC v2 test set |
+| Speaker EER | 17.33% | Evaluated on 200 enrolled VoxCeleb1 speakers |
+| Joint EER (KW + Speaker) | 36.20% | Combined keyword and speaker verification |
+| Joint AUC | 0.6768 | Area under the joint DET curve |
+| Parameter Count | 1.806 M | Within the < 3.0 M budget |
+| ONNX Model Size | 0.60 MB | Quantized INT8 export |
+| Optimal Scorer Weights | w_kw=0.30, w_spk=0.65 | Grid-searched over 10x10 combinations |
+| EER Threshold (tau) | 0.2222 | Operating point at equal error rate |
+
+The Detection Error Trade-off (DET) curve illustrating the False Reject Rate (FRR) against the False Acceptance Rate (FAR) under joint keyword and speaker verification trials is shown below:
+
+![Detection Error Trade-off (DET) Curve](docs/det_curve.png)
+
+#### Ablation Study Results
+
+To measure the individual contributions of each architectural component, we systematically disabled modules and re-evaluated:
+
+| Configuration | Keyword EER (%) | Speaker EER (%) | Parameters | Observations |
+|:---|:---:|:---:|:---:|:---|
+| **Full Model (baseline)** | **4.69** | **17.33** | **1.806 M** | Complete system with all components enabled. |
+| No FiLM Conditioning | 4.69 | 17.33 | 1.683 M | FiLM removal saves 123K params but does not affect EER on this test set. |
+| No Speaker Head | 4.69 | N/A | 1.806 M | KWS-only mode; speaker verification disabled entirely. |
+| No Temporal Block | 11.22 | 25.48 | 1.796 M | Temporal context removal degrades both keyword (+6.53%) and speaker (+8.15%) EER significantly. |
+| Equal Scorer Weights | 4.69 | 17.33 | 1.806 M | Using w_kw=0.50, w_spk=0.50 instead of calibrated 0.30/0.65 weights. |
 
 ### Attribution 
 

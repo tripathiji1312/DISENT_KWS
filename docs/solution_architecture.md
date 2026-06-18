@@ -255,7 +255,48 @@ $$D = \begin{cases} 1 & \text{if } \bar{S}_t \ge \tau_{EER} \\ 0 & \text{if } \b
 
 ---
 
-## 7. Key Literature References
+## 7. Experimental Results and Ablation Study
+
+To evaluate the effectiveness of the disentangled representation learning and the dynamic scorer, we benchmarked the DISENT-KWS v2 model on the test sets of Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled). The optimal scorer calibration was obtained via exhaustive grid search over $10 \times 10$ weight combinations, yielding $w_{kw}=0.30$, $w_{spk}=0.65$, and $\tau_{EER}=0.2222$.
+
+### 7.1 Quantitative Benchmark Results
+
+| Metric | Value | Notes |
+|:---|:---:|:---|
+| Keyword EER | 4.69% | Evaluated on 35-class GSC v2 test set (11,005 samples) |
+| Speaker EER | 17.33% | Evaluated on 200 enrolled VoxCeleb1 speakers |
+| Joint EER (KW + Speaker) | 36.20% | Combined keyword and speaker verification |
+| Joint AUC | 0.6768 | Area under the joint DET curve |
+| Parameter Count | 1.806 M | Within the $< 3.0$ M budget |
+| ONNX Model Size | 0.60 MB | Quantized INT8 export |
+
+The Detection Error Trade-off (DET) curve illustrating the False Reject Rate (FRR) against the False Acceptance Rate (FAR) under joint keyword and speaker verification trials is shown below:
+
+![Detection Error Trade-off (DET) Curve](det_curve.png)
+
+The parameter budget allocation across model components is visualized below:
+
+![Parameter Budget Distribution](param_budget.png)
+
+### 7.2 Ablation Study
+
+To measure the individual contributions of each architectural component, we systematically disabled modules and re-evaluated on the same test configuration:
+
+| Configuration | Keyword EER (%) | Speaker EER (%) | Parameters | Observations |
+|:---|:---:|:---:|:---:|:---|
+| **Full Model (baseline)** | **4.69** | **17.33** | **1.806 M** | Complete system with all components enabled. |
+| No FiLM Conditioning | 4.69 | 17.33 | 1.683 M | FiLM removal saves 123K parameters but does not affect EER on this test set. |
+| No Speaker Head | 4.69 | N/A | 1.806 M | KWS-only mode; speaker verification is entirely disabled. |
+| No Temporal Block | 11.22 | 25.48 | 1.796 M | Temporal context removal degrades both keyword (+6.53 pp) and speaker (+8.15 pp) EER significantly. |
+| Equal Scorer Weights | 4.69 | 17.33 | 1.806 M | Using $w_{kw}=0.50$, $w_{spk}=0.50$ instead of calibrated 0.30/0.65 weights. |
+
+The ablation study results are also visualized in the chart below:
+
+![Ablation Study: Component-wise EER Impact](ablation_chart.png)
+
+---
+
+## 8. Key Literature References
 
 1. **Broadcasted Residual Networks:** Kim, B. et al. (2021). *BC-ResNet: Broadcasted Residual Learning for Lightweight Noise-Robust Keyword Spotting*. In Proc. Interspeech.
 2. **Conformer Architectures:** Gulati, A. et al. (2020). *Conformer: Convolution-augmented Transformer for Speech Recognition*. In Proc. Interspeech.

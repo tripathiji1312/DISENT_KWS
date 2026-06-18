@@ -59,10 +59,10 @@ KD_ALPHA       = 0.7
 # ---------------------------------------------------------------------------
 # Scoring / Detection
 # ---------------------------------------------------------------------------
-SCORE_W_KW  = 0.55   # weight on keyword similarity
-SCORE_W_SPK = 0.45   # weight on speaker similarity
+SCORE_W_KW  = 0.30   # weight on keyword similarity (calibrated)
+SCORE_W_SPK = 0.65   # weight on speaker similarity (calibrated)
 EMA_ALPHA   = 0.7    # streaming smoothing factor
-DEFAULT_THRESHOLD = 0.50
+DEFAULT_THRESHOLD = 0.2222  # EER-optimal joint threshold
 
 # ---------------------------------------------------------------------------
 # Augmentation
