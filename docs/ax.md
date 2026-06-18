@@ -1,57 +1,57 @@
-# Agentic AI & Development Report
+# Agentic AI and Development Tools Report
 
-This document details how our team utilized agentic workflows, multi-agent coordination, and automated reasoning tools to design, develop, and finalize the DISENT-KWS v2 system.
-
----
-
-## 1. Agentic AI Architecture & Setup
-
-We approached the AX Hackathon using a hybrid developer-agent setup. The agentic developer (Antigravity) was configured with specialized capabilities and tools:
-* **Workspace Interaction Tools:** High-level search, direct file viewing (`view_file`), file creation/editing (`write_to_file`, `replace_file_content`), and sandbox shell execution (`run_command`).
-* **Multi-Agent Orchestration:** Ability to spawn specialized, concurrent subagents (e.g., `research` subagents) to parallelize codebase research, documentation extraction, and verification.
-* **Context Preservation (State Compaction):** Structured design documents (artifacts like `implementation_plan.md`, `task.md`, `walkthrough.md`) used to preserve task progress across chat compactions.
+This report explains the utilization of Agentic AI, large language model reasoning engines, cloud notebook environments, and automated workflows in implementing and optimizing the DISENT-KWS v2 system.
 
 ---
 
-## 2. Agentic Workflows & Reasoning Pipelines
+## 1. Agentic AI Setup and Developer Tools
 
-Our development cycle followed a strict planning-and-execution methodology:
+The system was developed using a collaborative setup comprising a developer agent, an LLM reasoning backend, and local/cloud execution interfaces:
 
-```mermaid
-graph TD
-    A[User Request] --> B[Research Phase]
-    B --> C[Create Implementation Plan]
-    C --> D[User Approval & Alignment]
-    D --> E[Parallel Task Execution]
-    E --> F[Automated Verification Suite]
-    F --> G[Deliverables Finalization]
+* **Antigravity (Developer Agent):** The primary agentic execution harness. Antigravity automates environment inspection, directory navigation, code modification, test suite execution, and file relocation. Equipped with filesystem read/write tools and shell execution capabilities, it translates architectural requirements into concrete source code.
+* **Claude (Reasoning Engine):** The underlying foundation model driving the agent's reasoning. Claude resolves complex logical constraints, outlines implementation plans, proposes loss function formulations (such as the CLUB mutual information bounds and Gradient Reversal Layers), and debugs shape mismatches from error logs.
+* **Kaggle & Google Colab:** Integrated cloud platform execution environments. Due to the high computational requirements of training on datasets like VoxCeleb (1,251 speakers) and Google Speech Commands (35 words), model training loops (Phase 1, 2, and 3) were offloaded to T4 and A100 GPU instances on Kaggle and Google Colab. Code updates were synced between the local workspace and these cloud instances via GitHub.
+* **Weights & Biases (W&B):** Used for remote logging, experiment monitoring, and artifact synchronization. This enabled training on remote cloud nodes (Kaggle/Colab) while tracking convergence and syncing model checkpoints back to the developer workspace.
+
+---
+
+## 2. Agentic Workflows and Reasoning Pipelines
+
+To ensure stability, correctness, and speed, we established a strict three-step reasoning pipeline:
+
+```
+[Reasoning & Design (Claude)]
+            │
+            ▼
+[Execution & File IO (Antigravity)]
+            │
+            ▼
+[Verification & Training (Kaggle / Colab / pytest)]
 ```
 
-### Key Stages:
-1. **Research & Code Exploration:** Spawning the `research` subagent to index files, locate model configurations, and check baseline losses.
-2. **Implementation Planning:** Writing an `implementation_plan.md` detailing every planned change, open questions, and exact validation tests.
-3. **Execution & Coding:** Writing code modularly (e.g., separating BC-ResNet encoder, causal Conformers, and dual-gate scorer) to ensure isolated testability.
-4. **Verification:** Running unit tests via `make test` inside the terminal to verify the forward/backward passes, shapes, and gradients of all components.
+1. **Reasoning Phase:** Before writing code, Claude analysed the problem statement constraints (<3M parameters, <0.2s xRT, SNR -5dB to 30dB). It mathematically formulated the dual-head layout and selected BC-ResNet-2 as the shared backbone.
+2. **Execution Phase:** Antigravity structured the codebase, created files, and modified relative import paths. To comply with the submission guidelines, Antigravity relocated the packages into a dedicated `src/` directory.
+3. **Verification Phase:** The agent utilized the `run_command` tool to run the unit test suite (`make test`), checking shape matching, gradient flow, and parameter budgets. The training scripts were then run on Kaggle/Colab to produce the final model parameters, which were verified via ONNX runtime latency tests.
 
 ---
 
-## 3. Tool Chaining & Automation
+## 3. Tool Chaining and Automation
 
-We chained several filesystem and process tools together to automate the packaging process:
-* **ONNX Verification Pipeline:** We combined `torch.onnx.export` with `onnxruntime` inference inside `eval/export.py` to automatically verify that the exported model had a maximum absolute difference from PyTorch of $<1\times10^{-5}$.
-* **Automated Deliverables Creator:** We wrote `scripts/generate_final_artifacts.py` to orchestrate ONNX exporting, ablation study logging, and DET curve plotting in a single execution block.
-* **W&B Sync integration:** Combined PyTorch training scripts with Weights & Biases API so checkpoints could be saved locally and automatically synced to the cloud run registry.
+Chaining multiple specialized tools enabled faster and more efficient development:
+
+* **Asynchronous Subagents:** For codebase exploration, research subagents were spawned to read long specification plans and inspect existing repositories without blocking the main agent's execution.
+* **ONNX Verification Harness:** A validation pipeline was established where the agent exported the PyTorch model to ONNX, loaded it using ONNX Runtime, and compared outputs against the PyTorch reference tensor using randomized inputs, raising assertions if the numerical discrepancy exceeded $1\times10^{-5}$.
+* **Artifact Synthesis Script:** Created `scripts/generate_final_artifacts.py` to automate exporting the final quantized model, running the ablation tests, and plotting the DET curve, eliminating manual command entry.
 
 ---
 
-## 4. What Worked and What Didn't
+## 4. What Worked and What Did Not Work
 
-### What Worked Well:
-* **Background Research Subagents:** Spawning independent research agents saved considerable token budget. They queried files, parsed directories, and reported summaries without polluting the main developer's working memory.
-* **Mock Tensor Unit Testing:** Building dummy data tests in `tests/` and executing `make test` caught shape mismatches in the causal Conformer attention blocks early before deploying to expensive GPU training.
-* **Fallbacks as Primary Guards:** Decoupling features like Mamba SSM and having automatic conv-fallback architectures kept our code from breaking across different execution environments (CPU vs. GPU/CUDA).
+### What Worked:
+* **Decoupled Unit Testing:** Creating unit tests in the `tests/` directory allowed the agent to verify modules (like the Causal Conformer layers or RIR Simulator) before running full training runs, preventing runtime errors on remote GPU instances.
+* **SSM Fallback Design:** Compilation of CUDA-specific selective scan kernels (Mamba) fails on general CPU systems. Setting up the Causal Dilated Conv1D block as an automatic fallback allowed the model to build and run unit tests on local CPU development environments while using Mamba on cloud GPUs.
+* **Persistent Artifact Planning:** Using custom markdown plans (`implementation_plan.md`, `task.md`) preserved the context across chat boundaries and compactions, preventing loss of design state.
 
-### What Did Not Work (Lessons Learned):
-* **Direct Local Deep Training:** Attempting to run full-scale VoxCeleb or Speech Commands training locally on CPU was mathematically infeasible. We had to pivot to using Kaggle notebooks and writing a robust Kaggle training markdown guide.
-* **Mamba SSM Local Compilation:** Compiling Mamba requires specialized CUDA kernels, which failed on non-CUDA developer terminals. The fallback mechanism (Dilated Conv Temporal Block) saved the project from deployment blockage.
-* **State Recovery from Loose Context:** In long chat sessions, details of previous training epochs got lost during context compactions. We learned to write important metrics (such as calibrated weights $w_{kw}=0.30$, $w_{spk}=0.65$) into persistent `config.py` variables rather than keeping them in memory.
+### What Did Not Work:
+* **Local Dataset Loading:** Attempting to store and process large VoxCeleb audio files locally inside sandboxed environments led to memory limits and long download times. This was resolved by using Kaggle-hosted datasets and symlinking inputs locally.
+* **Single-Phase Training:** Attempting to train the shared backbone and heads simultaneously with GRL and CLUB MI from random initialization led to representation collapse. We resolved this by training the model in phases (pre-training classification heads first, then introducing disentanglement constraints).
