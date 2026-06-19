@@ -6,7 +6,7 @@ This document describes how to train, enroll speakers, run the real-time demo, r
 
 ## 1. Training Pipeline
 
-Training consists of three stages: Phase 1 (pre-training), Phase 2 (disentanglement & joint fine-tuning), and Phase 3 (hard-negative training / calibration).
+Training consists of four phases: Phase 1 (softmax pre-training), Phase 2 (disentanglement & joint fine-tuning), Phase 3a (GE2E speaker refinement), and Phase 3b (hard-negative GE2E). After training, the scorer is calibrated via the benchmark script.
 
 ### Phase 1: Softmax Pre-training
 
@@ -17,9 +17,9 @@ python src/train.py --phase 1 --epochs 20 --data-root /path/to/data_root --save-
 ```
 
 **What happens:**
-- Shared encoder + phonetic head trained on Google Speech Commands v2 (35-word classification)
-- Shared encoder + speaker head trained on VoxCeleb1 (1,251 speaker classification)
-- ECAPA-TDNN teacher from SpeechBrain used for knowledge distillation
+- Shared encoder + phonetic head trained on Google Speech Commands v2 (35-word classification) using AAM-Softmax
+- Shared encoder + speaker head trained on VoxCeleb1 (1,251 speaker classification) using AAM-Softmax
+- Cosine annealing LR schedule with AdamW optimizer
 
 **Expected training curve:**
 ```
@@ -40,18 +40,36 @@ python src/train.py --phase 2 --epochs 20 --data-root /path/to/data_root \
 
 **What happens:**
 - All modules trained jointly with the composite loss:
-  $$L = L_{kw} + L_{spk} + 0.5L_{disent} + 0.3L_{reject} + 0.7L_{KD}$$
+  $$L = L_{kw} + L_{spk} + 0.5L_{disent} + 0.3L_{reject}$$
 - GRL λ ramps up sigmoidally: $\lambda(p) = 2/(1+e^{-10p}) - 1$
 - CLUB MI estimator minimizes $I(z_{spk}; z_{phn})$
-- Hard negatives mined from LibriPhrase every 5 epochs
+- Hard negatives mined from LibriPhrase
 
-### Phase 3: Hard-Negative Fine-Tuning & Scorer Calibration
+### Phase 3a: GE2E Speaker Fine-tuning
 
-Fine-tunes on hard negatives and calibrates the Dual-Gate Scorer:
+Refines the speaker head using Generalized End-to-End (GE2E) loss on VoxCeleb1 for improved speaker discriminability:
+
+```bash
+python src/train.py --phase 3a --epochs 20 --data-root /path/to/data_root \
+    --save-dir checkpoints --resume checkpoints/phase2_best.pt
+```
+
+### Phase 3b: Hard-negative GE2E Fine-tuning
+
+Continues GE2E training with hard-negative mining from LibriPhrase, forcing the speaker head to separate confusable speakers:
+
+```bash
+python src/train.py --phase 3b --epochs 20 --data-root /path/to/data_root \
+    --save-dir checkpoints --resume checkpoints/phase3a_best.pt
+```
+
+### Scorer Calibration
+
+After Phase 3b, calibrate the Dual-Gate Scorer via the benchmark script:
 
 ```bash
 python src/eval/benchmark.py \
-    --model-path checkpoints/phase2_best.pt \
+    --model-path checkpoints/phase3_hardneg_calibrated.pt \
     --data-root /path/to/data_root
 ```
 
@@ -206,12 +224,12 @@ To verify the published KPIs from scratch:
 ```bash
 # Step 1: Run full evaluation
 python src/eval/benchmark.py \
-    --model-path checkpoints/phase3_hardneg_calibrated.pt \
+    --model-path model_final.pt \
     --data-root /path/to/data_root
 
 # Step 2: Run ablation study
 python src/eval/ablation.py \
-    --model-path checkpoints/phase3_hardneg_calibrated.pt \
+    --model-path model_final.pt \
     --data-root /path/to/data_root
 
 # Step 3: Generate visuals
@@ -293,9 +311,19 @@ python src/train.py --phase 2 --epochs 20 \
     --data-root /data --save-dir checkpoints \
     --resume checkpoints/phase1_best.pt
 
-# Phase 3: Calibrate & benchmark
+# Phase 3a: GE2E speaker refinement (T4 GPU, ~6 hours)
+python src/train.py --phase 3a --epochs 20 \
+    --data-root /data --save-dir checkpoints \
+    --resume checkpoints/phase2_best.pt
+
+# Phase 3b: Hard-negative GE2E (T4 GPU, ~6 hours)
+python src/train.py --phase 3b --epochs 20 \
+    --data-root /data --save-dir checkpoints \
+    --resume checkpoints/phase3a_best.pt
+
+# Calibrate scorer & benchmark
 python src/eval/benchmark.py \
-    --model-path checkpoints/phase2_best.pt \
+    --model-path checkpoints/phase3_hardneg_calibrated.pt \
     --data-root /data
 
 # Generate artifacts
@@ -312,7 +340,7 @@ from models.disent_v2 import DISENT_KWS_v2
 import torch
 
 model = DISENT_KWS_v2()
-model.load_state_dict(torch.load('checkpoints/model_final.pt'))
+model.load_state_dict(torch.load('model_final.pt'))
 model.eval()
 
 dummy = torch.randn(1, 80, 200)

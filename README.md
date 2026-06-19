@@ -5,11 +5,6 @@
 </p>
 
 <p align="center">
-  <strong>🏆 Samsung EnnovateX AX Hackathon — Problem Statement 4</strong><br>
-  <em>Designing a Robust AI System for Speech Disentanglement</em>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/Parameters-1.806M-green" alt="1.806M params"/>
   <img src="https://img.shields.io/badge/Keyword%20EER-4.69%25-green" alt="4.69% Keyword EER"/>
   <img src="https://img.shields.io/badge/Joint%20AUC-0.8425-green" alt="0.8425 AUC"/>
@@ -26,7 +21,7 @@
 - **Team members (Names)** — Sohini Banerjee, Swarnim Tripathi
 - **Institute/College Name** — VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
 - **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/open?id=123_noisy_af_presentation_placeholder)
-- **Full Submission Demo Video Link** — [YouTube Demo Video](https://youtube.com/watch?v=123_noisy_af_demo_placeholder)
+- **Full Submission Demo Video Link** — [YouTube Demo Video](https://youtube.com/watch?v=123_noisy_af_demo_placeholder) (or the same video as Setup & Reproducibility if combined into one)
 - **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://youtube.com/watch?v=123_noisy_af_setup_placeholder)
 
 ---
@@ -110,16 +105,16 @@ src/
 
 | Model | Link | Format | Size |
 |:---|---|:---:|:---:|
-| DISENT-KWS | [🤗 Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS) | PyTorch + ONNX | 0.60 MB |
+| DISENT-KWS | [🤗 Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS) | PyTorch + ONNX | 7 MB + 0.60 MB |
 
 ### Datasets Used
 
 | Dataset | Usage | Samples | License |
 |:---|---|:---:|:---:|
-| [Google Speech Commands v2](https://download.tensorflow.org/data/speech_commands_v0.02.tar.gz) | Keyword spotting pre-training | 105K utterances | CC BY 4.0 |
-| [VoxCeleb 1 & 2](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/) | Speaker verification training | 1.2M utterances | CC BY 4.0 |
-| [LibriPhrase](https://github.com/PaddlePaddle/PaddleSpeech) | Phonetic triplet mining | ~45K utterances | Apache 2.0 |
-| [MUSAN](https://www.openslr.org/17/) | Noise augmentation | 109 hrs | CC BY 4.0 |
+| [Google Speech Commands v2](https://www.kaggle.com/datasets/sylkaladin/speech-commands-v2) | Keyword spotting pre-training | 105K utterances | CC BY 4.0 |
+| [VoxCeleb1](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/) | Speaker verification training | 153K utterances (1,251 speakers) | CC BY 4.0 |
+| [LibriPhrase](https://huggingface.co/datasets/charsiu/libriphrase) | Hard-negative triplet pairs (up to 3K triplets generated from metadata) | Apache 2.0 |
+| [MUSAN](https://www.kaggle.com/datasets/nhattruongdev/musan-noise) | Noise augmentation | 109 hrs | CC BY 4.0 |
 
 ### Datasets Published
 
@@ -133,12 +128,12 @@ No custom datasets were published. All datasets listed above are publicly availa
   <img src="docs/param_budget.png" alt="Parameter Budget Distribution" width="700"/>
 </p>
 
-The system uses a **dual-head disentangled architecture** built on a shared BC-ResNet-2 encoder:
+The system uses a **dual-head disentangled architecture** built on a shared BC-ResNet-2 encoder (total **1.806M parameters**):
 
-1. **Shared Encoder (BC-ResNet-2)** — Broadcasted residual network extracts noise-robust acoustic features
-2. **Temporal Block (Mamba SSM / Dilated Conv1D)** — O(T) temporal context modeling
-3. **Phonetic Head (Causal Conformer)** — Extracts keyword-discriminative embeddings **zₚₕₙ ∈ ℝ¹⁹²**
-4. **Speaker Head (ECAPA-TDNN Lite)** — Extracts speaker-discriminative embeddings **zₛₚₖ ∈ ℝ¹⁹²**
+1. **Shared Encoder (BC-ResNet-2)** — Broadcasted residual network, 33.8K params
+2. **Temporal Block (Mamba SSM / Dilated Conv1D)** — O(T) temporal context modeling, 10.3K params
+3. **Phonetic Head (Causal Conformer)** — Extracts keyword-discriminative embeddings **zₚₕₙ ∈ ℝ¹⁹²**, 1,673K params
+4. **Speaker Head (ECAPA-TDNN Lite)** — Extracts speaker-discriminative embeddings **zₛₚₖ ∈ ℝ¹⁹²**, 88.8K params
 5. **Disentanglement Module (GRL + CLUB)** — Adversarial gradient reversal + mutual information minimization forces **zₚₕₙ ⟂ zₛₚₖ**
 6. **Dual-Gate Scorer** — Weighted cosine similarity (`w_kw=0.30`, `w_spk=0.65`) with EMA smoothing and DET-calibrated threshold (`τ=0.2222`)
 
@@ -154,7 +149,7 @@ The system uses a **dual-head disentangled architecture** built on a shared BC-R
 
 ## Final Performance Benchmarks
 
-Evaluated on Google Speech Commands v2 test set (11,005 samples, 35 classes) and VoxCeleb1 (1,251 speakers, 200 enrolled). Scorer weights calibrated via 10×10 grid search.
+Evaluated on Google Speech Commands v2 test set (11,005 samples, 35 classes) and VoxCeleb1 (1,251 speakers). Scorer weights calibrated via joint verification grid search over 10×10 weight combinations + DET-driven threshold selection.
 
 | Metric | Achieved | Target | Status |
 |:---|---|:---:|:---:|
@@ -216,4 +211,5 @@ This project builds upon and transfers weights from the open-source [SpeechBrain
 | **Dual-Gate Scorer** | Weighted cosine similarity (wₖw=0.30, wₛₚₖ=0.65) + EMA smoothing for stable real-time streaming |
 | **Calibration Pipeline** | Grid-searched scorer weights + DET curve-driven threshold selection (τ=0.2222) |
 | **Rejection Loss** | Contrastive triplet loss with hard-negative mining from LibriPhrase for confuser rejection |
+| **GE2E Speaker Fine-tuning** | Generalized End-to-End loss for speaker head refinement in Phase 3 |
 | **Mamba SSM Fallback** | Automatic fallback from Mamba to Dilated Conv1D for cross-platform compatibility |

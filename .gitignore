@@ -188,3 +188,4 @@ tmp/
 
 # Pre-commit
 .pre-commit-config.yaml.bak
+notebooks/

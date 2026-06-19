@@ -115,18 +115,17 @@ def ablation_chart():
 # 2. PARAMETER BUDGET PIE CHART
 # ═══════════════════════════════════════════════════════════════════════
 def param_pie():
-    # Approximate parameter breakdown from the architecture
+    # Actual parameter breakdown from the model
     # Total: 1.806M
     components = [
         "BC-ResNet-2\nEncoder",
         "Temporal\nBlock",
         "Phonetic Head\n(Conformer)",
-        "Speaker Head\n(ECAPA-TDNN)",
-        "FiLM\nConditioning",
-        "Scorer +\nClassifiers",
+        "Speaker Head\n(ECAPA-Lite)",
+        "Scorer + Other",
     ]
-    params_k = [520, 180, 310, 420, 123, 253]  # in thousands
-    colors = [ACCENT, CYAN, GREEN, ORANGE, PURPLE, PINK]
+    params_k = [33.8, 10.3, 1673.1, 88.8, 0.1]  # in thousands
+    colors = [ACCENT, CYAN, GREEN, ORANGE, PINK]
 
     fig, ax = plt.subplots(figsize=(9, 9))
 
@@ -225,27 +224,27 @@ def snr_curve():
 # 4. TRAINING PHASES DIAGRAM
 # ═══════════════════════════════════════════════════════════════════════
 def training_phases():
-    fig, ax = plt.subplots(figsize=(16, 5))
-    ax.set_xlim(0, 30)
+    fig, ax = plt.subplots(figsize=(18, 5))
+    ax.set_xlim(0, 34)
     ax.set_ylim(0, 6)
     ax.axis("off")
 
     phases = [
         {
             "name": "Phase 1",
-            "subtitle": "Softmax Pre-training",
-            "x": 2, "w": 7,
+            "subtitle": "AAM Pre-training",
+            "x": 1, "w": 6,
             "color": ACCENT,
             "details": [
                 "AAM-Softmax Loss",
                 "35-class KW + 1251 Spk",
-                "20 epochs, LR 1e-3",
+                "20 epochs, LR 3e-4",
             ],
         },
         {
             "name": "Phase 2",
             "subtitle": "Disentanglement",
-            "x": 11, "w": 7,
+            "x": 9, "w": 6,
             "color": ORANGE,
             "details": [
                 "GRL + CLUB MI",
@@ -254,14 +253,25 @@ def training_phases():
             ],
         },
         {
-            "name": "Phase 3",
-            "subtitle": "Calibration",
-            "x": 20, "w": 7,
+            "name": "Phase 3a",
+            "subtitle": "GE2E Fine-tuning",
+            "x": 17, "w": 6,
             "color": GREEN,
             "details": [
+                "GE2E speaker loss",
+                "Spk head only, frozen backbone",
+                "20 epochs, LR 1e-4",
+            ],
+        },
+        {
+            "name": "Phase 3b",
+            "subtitle": "Hard-neg GE2E",
+            "x": 25, "w": 6,
+            "color": PURPLE,
+            "details": [
                 "Hard-negative mining",
-                "Grid search 10x10",
-                "w_kw=0.30, w_spk=0.65",
+                "Speaker pair refinement",
+                "25 epochs, LR 5e-5",
             ],
         },
     ]
@@ -287,11 +297,17 @@ def training_phases():
                     ha="center", va="center", fontsize=9, color="#8b949e")
 
     # Arrows between phases
-    for x_start in [9, 18]:
+    for x_start in [7, 15, 23]:
         ax.annotate("", xy=(x_start + 2, 3.1),
                     xytext=(x_start, 3.1),
                     arrowprops=dict(arrowstyle="-|>", color="#c9d1d9",
                                     lw=2, mutation_scale=20))
+
+    # Calibration label below
+    ax.annotate("", xy=(30, 1.2), xytext=(30, 0.5),
+                arrowprops=dict(arrowstyle="-|>", color=PINK, lw=1.5, mutation_scale=15))
+    ax.text(30, 0.3, "Scorer Calibration\nw_kw=0.30, w_spk=0.65\nτ=0.2222",
+            ha="center", va="top", fontsize=9, color=PINK)
 
     ax.set_title("Multi-Phase Training Pipeline",
                  fontsize=18, fontweight="bold", pad=20, color="#c9d1d9")

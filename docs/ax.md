@@ -24,7 +24,7 @@ OpenCode automates environment inspection, directory navigation, code modificati
 **Claude** served as the underlying foundation model driving the agent's reasoning — the "brain" of the operation. Its role included:
 
 - **Constraint formulation**: Parsing the problem statement (<3M parameters, <0.2s xRT, SNR -5dB to 30dB, TA ≥99%, FA <1/hr) and mathematically mapping to architectural decisions
-- **Loss function design**: Proposing the CLUB mutual information upper bound formulation, GRL gradient reversal, AAM-Softmax with subcenters, and the rejection triplet loss
+- **Loss function design**: Proposing the CLUB mutual information upper bound formulation, GRL gradient reversal, AAM-Softmax with subcenters, GE2E loss, and the rejection triplet loss
 - **Architecture selection**: Evaluating BC-ResNet vs DS-CNN vs EfficientNet for the shared backbone, and selecting Causal Conformer for phonetic head based on streaming latency constraints
 - **Debugging**: Analyzing shape mismatch errors from stack traces and proposing corrections (e.g., fixing broadcasting dimensions in the FiLM layer, correcting the causal padding in temporal convolutions)
 - **Mathematical proofs**: Formulating the disentanglement lower-bound theorem (Theorem 1) and Lipschitz noise robustness theorem (Theorem 2) for the technical documentation
@@ -106,8 +106,8 @@ Before writing a single line of code, the reasoning engine performed:
    - Heads: Conformer vs TDNN vs LSTM
    - Decision: BC-ResNet-2 + Mamba/DilatedConv + Conformer + ECAPA-Lite
 3. **Mathematical Loss Design**: Derived the composite loss function:
-   $$L = L_{AAM}^{kw} + L_{AAM}^{spk} + 0.5 \cdot L_{disent} + 0.3 \cdot L_{reject} + 0.7 \cdot L_{KD}$$
-   where $L_{disent}$ combines GRL adversarial classification and CLUB mutual information bound
+    $$L = L_{AAM}^{kw} + L_{AAM}^{spk} + 0.5 \cdot L_{disent} + 0.3 \cdot L_{reject}$$
+    where $L_{disent}$ combines GRL adversarial classification and CLUB mutual information bound
 4. **Scorer Formulation**: Designed the dual-gate weighted scorer with EMA smoothing and DET-based threshold calibration
 
 ### 2.2 Execution Phase (Detail)
@@ -286,7 +286,7 @@ The **Router** (main agent) decomposed the problem into parallel tracks, spawned
 | **Config.py Contract** | Single source of truth prevented the "my head expects 48 channels but your encoder outputs 32" class of bugs |
 | **Persistent Artifact Planning** | Markdown plan files survived context compactions, preserving design state across long development sessions |
 | **Kaggle-Hosted Datasets** | Eliminated 10+ GB downloads; VoxCeleb was available as a Kaggle dataset, mountable via symlink |
-| **3-Phase Training** | Pre-training heads → joint disentanglement → hard-negative calibration. Each phase built on the previous, preventing representation collapse |
+| **4-Phase Training** | Pre-training heads → joint disentanglement → GE2E speaker refinement → hard-negative calibration. Each phase built on the previous, preventing representation collapse |
 | **Weights & Biases** | Loss curves, learning rates, gradient norms all remotely logged; model checkpoints synced automatically across environments |
 
 ### What Did Not Work ❌

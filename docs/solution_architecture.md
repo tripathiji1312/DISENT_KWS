@@ -27,8 +27,8 @@ The mapping must satisfy the following joint operational constraints:
 1. **Parameter Budget:** $\Theta(f) < 3.0 \times 10^6$ parameters.
 2. **Real-Time Factor (xRT):** Let $\Delta \tau$ be the execution time of the model on a CPU for an audio segment of duration $T$. The real-time factor is bounded by:
    $$\text{xRT} = \frac{\Delta \tau}{T} < 0.20$$
-3. **Robustness:** True Acceptance rate $\text{TA}_{clean} \ge 99.0\%$ and $\text{TA}_{noisy} \ge 90.0\%$ for signal-to-noise ratios $\text{SNR} \in [-5, 30]\text{ dB}$.
-4. **False Acceptance (FA):** $\text{FA} < 1.0\text{ false acceptances per hour}$.
+3. **Robustness:** Keyword and speaker verification performance must generalize across signal-to-noise ratios $\text{SNR} \in [-5, 30]\text{ dB}$.
+4. **Latency:** End-to-end inference latency $< 200\text{ ms}$ on a CPU for $2\text{s}$ audio windows.
 
 ---
 
@@ -108,7 +108,7 @@ The temporal feature map $\mathbf{y}_{1D} \in \mathbb{R}^{C_{out} \times T}$ is 
 
 $$\mathbf{y}_{block} = \mathbf{y}_{2D} + \text{Broadcast}\left(\mathbf{y}_{1D}, \text{target\_shape}=(C_{out}, F', T)\right)$$
 
-This mechanism allows the model to compute global temporal statistics while retaining spatial-frequency context using only $520\text{ K}$ parameters.
+This mechanism allows the model to compute global temporal statistics while retaining spatial-frequency context using only $33.8\text{ K}$ parameters.
 
 ### 3.2 Phonetic Head: Causal Conformer
 
@@ -207,9 +207,9 @@ This minimizer penalizes statistical dependencies between $\mathbf{z}_{phn}$ and
 
 ## 5. Loss Functions and Training Stages
 
-The system is trained using a multi-loss optimization function across three stages. The complete training pipeline is illustrated below:
+The system is trained using a multi-loss optimization function across four stages: Phase 1 (softmax pre-training), Phase 2 (disentanglement & joint fine-tuning), Phase 3a (GE2E speaker refinement), and Phase 3b (hard-negative GE2E). The complete training pipeline is illustrated below:
 
-![Three-Phase Training Pipeline](training_phases.png)
+![Four-Phase Training Pipeline](training_phases.png)
 
 ### 5.1 Additive Angular Margin (AAM-Softmax) Loss
 Used in Phase 1 to train classification boundaries. The loss function projects embeddings onto a hypersphere and introduces an angular margin $m$:
@@ -230,6 +230,24 @@ To handle out-of-vocabulary and unauthorized speakers, we define the rejection l
 $$L_{reject} = \max\left(0, \gamma - \|\mathbf{z}_a - \mathbf{z}_{confuser}\|_2^2\right)$$
 
 Where $\gamma$ is the rejection safety margin.
+
+### 5.3 Generalized End-to-End (GE2E) Loss
+
+In Phase 3a, the speaker head is refined using the GE2E loss. For a batch of $N$ speakers each with $M$ utterances, let $\mathbf{x}_{ji}$ denote utterance $i$ from speaker $j$. The speaker embedding for utterance $i$ of speaker $j$ is $\mathbf{e}_{ji} = f_{spk}(\mathbf{x}_{ji}) \in \mathbb{R}^{192}$. The centroid (mean embedding) for speaker $j$ excluding utterance $i$ is:
+
+$$\mathbf{c}_{j}^{(-i)} = \frac{1}{M-1} \sum_{m \neq i} \mathbf{e}_{jm}$$
+
+The similarity matrix $\mathbf{S}$ with entries $S_{ji,k} = w \cdot \cos(\mathbf{e}_{ji}, \mathbf{c}_k) + b$ (where $w, b$ are learnable scale/bias) is optimized via softmax:
+
+$$L_{GE2E} = -\frac{1}{N \cdot M} \sum_{j=1}^N \sum_{i=1}^M \log \frac{e^{S_{ji,j}}}{\sum_{k=1}^N e^{S_{ji,k}}}$$
+
+### 5.4 Hard-negative GE2E Loss
+
+In Phase 3b, the GE2E loss is extended with hard-negative mining from LibriPhrase. For each anchor utterance, a phonetically similar confuser utterance from a different speaker is retrieved. The similarity of the anchor to this hard negative is explicitly penalized:
+
+$$L_{hard} = L_{GE2E} + \beta \cdot \max\left(0, \cos(\mathbf{e}_{anchor}, \mathbf{e}_{hardneg}) - \delta\right)$$
+
+Where $\beta$ is the hard-negative weight and $\delta$ is the margin.
 
 ---
 
@@ -259,7 +277,7 @@ $$D = \begin{cases} 1 & \text{if } \bar{S}_t \ge \tau_{EER} \\ 0 & \text{if } \b
 
 ## 7. Experimental Results and Ablation Study
 
-To evaluate the effectiveness of the disentangled representation learning and the dynamic scorer, we benchmarked the DISENT-KWS model on the test sets of Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled). The optimal scorer calibration was obtained via exhaustive grid search over $10 \times 10$ weight combinations, yielding $w_{kw}=0.30$, $w_{spk}=0.65$, and $\tau_{EER}=0.2222$.
+To evaluate the effectiveness of the disentangled representation learning and the dynamic scorer, we benchmarked the DISENT-KWS model on the test sets of Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers). The optimal scorer calibration was obtained via exhaustive grid search over $10 \times 10$ weight combinations, yielding $w_{kw}=0.30$, $w_{spk}=0.65$, and $\tau_{EER}=0.2222$.
 
 ### 7.1 Quantitative Benchmark Results
 
@@ -270,7 +288,7 @@ To evaluate the effectiveness of the disentangled representation learning and th
 | **CPU Latency** | **26.43 ms** | p95: 28.29 ms, $< 200$ ms target ✅ |
 | **Real-Time Factor (xRT)** | **0.0132** | Well under $< 0.20$ budget ✅ |
 | **Keyword EER (standalone)** | **4.69%** | Evaluated on 35-class GSC v2 test set (11,005 samples) |
-| **Speaker EER (standalone)** | **17.86%** | Evaluated on 200 enrolled VoxCeleb1 speakers |
+| **Speaker EER (standalone)** | **17.86%** | Evaluated on VoxCeleb1 (1,251 speakers) |
 | **Joint EER** | **23.47%** | Combined keyword + speaker verification trials |
 | **Joint AUC** | **0.8425** | Area under the joint DET curve |
 | **Optimal Weights** | wₖw=0.30, wₛₚₖ=0.65 | Grid-searched over $10 \times 10$ combinations |

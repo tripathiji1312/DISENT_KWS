@@ -89,14 +89,13 @@ To train the models or run the full benchmarking pipeline, acquire these public 
 │   ├── bed/
 │   ├── ...
 │   └── validation_list.txt
-├── voxceleb/                 # VoxCeleb 1 & 2
-│   ├── wav/
-│   │   ├── id10001/
-│   │   ├── id10002/
-│   │   └── ...
+├── voxceleb/                 # VoxCeleb1
+│   ├── id10001/
+│   ├── id10002/
+│   └── ...
 ├── libriphrase/              # LibriPhrase
-│   ├── libriphrase_easy.txt
-│   └── libriphrase_hard.txt
+│   ├── extracted/            # Extracted audio files
+│   └── hard_triplets.csv     # Generated triplet CSV
 └── musan/                    # MUSAN noise
     ├── noise/
     ├── music/
@@ -106,10 +105,15 @@ To train the models or run the full benchmarking pipeline, acquire these public 
 ### A. Google Speech Commands v2
 
 ```bash
-# Auto-download via torchaudio (used by our dataloaders)
-# Or manual download:
-wget https://download.tensorflow.org/data/speech_commands_v0.02.tar.gz
-tar -xzf speech_commands_v0.02.tar.gz -C <data-root>/speech_commands/
+# Download from Kaggle:
+# https://www.kaggle.com/datasets/sylkaladin/speech-commands-v2
+# Unzip to <data-root>/speech_commands/
+```
+
+Alternatively, use torchaudio's built-in downloader which pulls from TensorFlow:
+```python
+import torchaudio
+torchaudio.datasets.SPEECHCOMMANDS(root="<data-root>", download=True)
 ```
 
 | Property | Value |
@@ -119,36 +123,99 @@ tar -xzf speech_commands_v0.02.tar.gz -C <data-root>/speech_commands/
 | Classes | 35 keywords |
 | Format | 16 kHz, 16-bit, mono WAV |
 
-### B. VoxCeleb 1 & 2
+### B. VoxCeleb1
 
 ```bash
 # Option 1: Kaggle-hosted (recommended — no download required on Kaggle)
-# Add to Kaggle notebook: "voxceleb" dataset
+# Add to Kaggle notebook: the "voxceleb" dataset
+# Typical Kaggle path: /kaggle/input/voxceleb/wav/
 
 # Option 2: Manual download
 # Download from: https://www.robots.ox.ac.uk/~vgg/data/voxceleb/
-# VoxCeleb1: ~6 GB | VoxCeleb2: ~80 GB
+# VoxCeleb1: ~6 GB | 1,251 speakers | 153,516 utterances
 ```
 
-| Property | VoxCeleb 1 | VoxCeleb 2 |
-|:---|---:|:---:|
-| Speakers | 1,251 | 5,994 |
-| Utterances | 153,516 | 1,092,009 |
-| Size | ~6 GB | ~80 GB |
+| Property | Value |
+|:---:|---:|
+| Speakers | 1,251 |
+| Utterances | 153,516 |
+| Size | ~6 GB |
 
 ### C. LibriPhrase
 
-```bash
-git clone https://github.com/PaddlePaddle/PaddleSpeech
-# Extract LibriPhrase metadata from the dataset
-# Copy triplet lists to <data-root>/libriphrase/
+LibriPhrase is downloaded from HuggingFace and then we generate hard-triplet pairs using the included generation script:
+
+```python
+# Download from HuggingFace and build triplets
+import os
+import zipfile
+import pandas as pd
+from huggingface_hub import hf_hub_download
+
+DATA_ROOT     = "<data-root>/libriphrase"
+EXTRACT_DIR   = os.path.join(DATA_ROOT, "extracted")
+CSV_OUT       = os.path.join(DATA_ROOT, "hard_triplets.csv")
+os.makedirs(EXTRACT_DIR, exist_ok=True)
+
+# Download
+zip_path = hf_hub_download(
+    repo_id="charsiu/libriphrase",
+    filename="LibriPhrase_evalset.zip",
+    repo_type="dataset"
+)
+meta_path = hf_hub_download(
+    repo_id="charsiu/libriphrase",
+    filename="libriphrase_diffspk_all_1word.csv",
+    repo_type="dataset"
+)
+
+# Extract
+with zipfile.ZipFile(zip_path, 'r') as z:
+    z.extractall(EXTRACT_DIR)
+
+# Load metadata
+df = pd.read_csv(meta_path, encoding="latin-1")
+
+# Build triplets from diffspk_positive (anchor-positive) and
+# diffspk_hardneg (anchor-confuser) pairs
+positives, negatives = {}, {}
+for _, row in df.iterrows():
+    label    = str(row["anchor_text"])
+    type_lbl = str(row["type"])
+    anchor_p  = os.path.join(EXTRACT_DIR, str(row["anchor"]))
+    compare_p = os.path.join(EXTRACT_DIR, str(row["comparison"]))
+    if type_lbl == "diffspk_positive":
+        positives.setdefault(label, []).append((anchor_p, compare_p))
+    elif type_lbl == "diffspk_hardneg":
+        negatives.setdefault(label, []).append((anchor_p, compare_p))
+
+# Write up to 3000 triplets
+lines = []
+for label in set(positives) & set(negatives):
+    for a, p in positives[label][:len(negatives[label])]:
+        if len(lines) >= 3000: break
+        _, n = negatives[label][len(lines) % len(negatives[label])]
+        if all(os.path.exists(x) for x in [a, p, n]):
+            lines.append(f"{a},{p},{n},{label}\n")
+
+with open(CSV_OUT, "w") as f:
+    f.writelines(lines)
+
+print(f"Created {len(lines)} triplets → {CSV_OUT}")
 ```
+
+| Property | Value |
+|:---|---|
+| Source | [charsiu/libriphrase on HuggingFace](https://huggingface.co/datasets/charsiu/libriphrase) |
+| Triplets Generated | up to 3,000 hard-negative pairs |
+| Format | 16 kHz, mono WAV |
 
 ### D. MUSAN
 
 ```bash
-wget https://openslr.org/resources/17/musan.tar.gz
-tar -xzf musan.tar.gz -C <data-root>/musan/
+# Download from Kaggle:
+# https://www.kaggle.com/datasets/nhattruongdev/musan-noise
+# Unzip to <data-root>/musan/
 ```
 
 | Subset | Duration | Files |
@@ -193,12 +260,13 @@ make test
 **Expected output (60+ tests):**
 ```
 =========================================================
-collected 64 items
+collected 60 items
 
-tests/test_dataloaders.py .................... [ 78%]
-tests/test_models.py .......................  [100%]
+tests/test_dataloaders.py ...................... [ 50%]
+tests/test_models.py .....................       [ 85%]
+tests/test_training.py .........                [100%]
 =========================================================
-✅ 64 passed in 12.3s
+✅ 60 passed in 6.1s
 ```
 
 > [!WARNING]
@@ -208,6 +276,7 @@ tests/test_models.py .......................  [100%]
 
 ```bash
 python -c "
+import sys; sys.path.insert(0, 'src')
 from models.disent_v2 import DISENT_KWS_v2
 m = DISENT_KWS_v2()
 total = sum(p.numel() for p in m.parameters())
