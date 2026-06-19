@@ -50,14 +50,12 @@ python src/demo.py enroll \
     --out enrollment.pt
 
 # Real-time detection
-python src/demo.py detect \
-    --enrollment enrollment.pt \
-    --model model_final.pt
+python src/demo.py detect --enrollment enrollment.pt --auto-threshold --vad-threshold 0.02
 ```
 
 ---
 
-## Project Artefacts
+## Project Artifacts
 
 ### Technical Documentation
 

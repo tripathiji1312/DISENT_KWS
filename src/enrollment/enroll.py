@@ -12,7 +12,31 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import config
 
-
+def trim_silence(wav: torch.Tensor, threshold_db: float = -30.0) -> torch.Tensor:
+    """Simple energy-based VAD to trim silence from enrollment WAVs."""
+    if wav.dim() == 1:
+        wav = wav.unsqueeze(0)
+    
+    # Compute frame energy
+    window = 1600  # 100ms at 16kHz
+    energy = wav.unfold(1, window, window).pow(2).mean(dim=2).squeeze(0)
+    
+    # Convert to dB and find loud frames
+    energy_db = 10 * torch.log10(energy + 1e-8)
+    loud_mask = energy_db > (energy_db.max() + threshold_db)
+    
+    if not loud_mask.any():
+        return wav  # fallback if all quiet
+    
+    # Find start and end of speech
+    start = loud_mask.nonzero()[0].item() * window
+    end = (loud_mask.nonzero()[-1].item() + 1) * window
+    
+    # Pad by 200ms to keep natural pacing
+    start = max(0, start - 3200)
+    end = min(wav.shape[1], end + 3200)
+    
+    return wav[:, start:end]
 class LFBETransform:
     def __init__(self):
         self.mel = torchaudio.transforms.MelSpectrogram(
@@ -103,6 +127,9 @@ def extract_prototypes(
 
     z_phns, z_spks = [], []
     for wav in waveforms:
+        # ---> ADD THIS LINE <---
+        wav = trim_silence(wav)
+        
         feat = transform(wav).unsqueeze(0).to(device)   # (1, 80, T)
         z_phn, z_spk = model(feat)                       # (1, 192) each
         z_phns.append(z_phn.squeeze(0))
