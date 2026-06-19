@@ -222,6 +222,9 @@ python scripts/generate_final_artifacts.py \
 To verify the published KPIs from scratch:
 
 ```bash
+# Step 0: Download pre-trained model (skip if you trained your own)
+huggingface-cli download tripathiji1312/DISENT-KWS model_final.pt --local-dir .
+
 # Step 1: Run full evaluation
 python src/eval/benchmark.py \
     --model-path model_final.pt \

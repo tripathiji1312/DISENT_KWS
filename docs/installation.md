@@ -226,7 +226,33 @@ print(f"Created {len(lines)} triplets → {CSV_OUT}")
 
 ---
 
-## 5. Hardware Acceleration Setup
+## 5. Pre-trained Model Download (Inference Only)
+
+If you only want to run inference/demo (not train from scratch), download the pre-trained model checkpoint from HuggingFace:
+
+```bash
+# Install huggingface-cli if not already
+pip install huggingface_hub
+
+# Download the final model checkpoint
+huggingface-cli download tripathiji1312/DISENT-KWS model_final.pt --local-dir .
+
+# Download ONNX export (for optimized CPU inference)
+huggingface-cli download tripathiji1312/DISENT-KWS model_final.onnx --local-dir .
+```
+
+**Expected files:**
+```
+model_final.pt       — PyTorch checkpoint (1.806M params, ~7 MB)
+model_final.onnx     — ONNX runtime export (0.60 MB)
+```
+
+> [!NOTE]
+> The ONNX model works on CPU without any GPU dependencies — verify with `python -c "import onnxruntime as ort; print(ort.InferenceSession('model_final.onnx'))"`.
+
+---
+
+## 6. Hardware Acceleration Setup
 
 ### For Training (GPU)
 
@@ -249,7 +275,7 @@ python -c "import onnxruntime; print(f'Providers: {onnxruntime.get_available_pro
 
 ---
 
-## 6. Verifying the Setup
+## 7. Verifying the Setup
 
 Run the automated test suite to confirm everything is configured correctly:
 
@@ -288,30 +314,6 @@ assert total < 3_000_000, 'OVER BUDGET!'
 **Expected:**
 ```
 ✅ Model built: 1,806,068 params (1.81M)
-```
-
----
-
-## 7. Docker Setup (Optional)
-
-```dockerfile
-FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sox libsndfile1-dev ffmpeg curl && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-COPY . .
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-CMD ["python", "demo.py", "--help"]
-```
-
-```bash
-docker build -t disent-kws .
-docker run --gpus all -it disent-kws python demo.py --help
 ```
 
 ---
