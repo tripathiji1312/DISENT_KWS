@@ -82,6 +82,59 @@ def _load_model(path, device):
     return model.to(device).eval()
 
 
+def _record_utterance(duration: float = 2.0, mic_device=None) -> torch.Tensor:
+    """Record `duration` seconds from microphone. Returns (1, samples) tensor."""
+    if not _SD_OK:
+        raise RuntimeError("Install sounddevice: pip install sounddevice")
+    sr = config.SAMPLE_RATE
+    print(f"🎤  Recording (say your keyword now)…", end="", flush=True)
+    audio = sd.rec(int(duration * sr), samplerate=sr, channels=1, dtype="float32",
+                   device=mic_device)
+    sd.wait()
+    print(f"\r✅  Recorded {duration:.1f}s\n")
+    return torch.tensor(audio.T, dtype=torch.float32)  # (1, samples)
+
+
+def _do_live_enroll(args):
+    """Record N utterances, then run enrollment."""
+    import tempfile
+    import os
+
+    if not _SD_OK:
+        print("❌ Install sounddevice:  pip install sounddevice"); return
+
+    if args.mic is None:
+        try:
+            args.mic = sd.default.device[0]
+        except Exception:
+            print("❌ No microphone found. Run `python -c \"import sounddevice as sd; print(sd.query_devices())\"` to list devices.")
+            return
+
+    model = _load_model(args.model, args.device)
+    print(f"\n{_B}Live Enrollment{_R}")
+    print(f"  Keyword: say it {args.n_record} times when prompted")
+    print(f"  Mic:     {args.mic}\n")
+
+    audio_dir = args.out_dir
+    os.makedirs(audio_dir, exist_ok=True)
+    paths = []
+
+    for i in range(args.n_record):
+        input(f"{_B}[{i+1}/{args.n_record}]{_R} Press Enter to record… ")
+        wav = _record_utterance(duration=args.duration, mic_device=args.mic)
+        p = os.path.join(audio_dir, f"kw_{i:02d}.wav")
+        import torchaudio
+        torchaudio.save(p, wav, config.SAMPLE_RATE)
+        paths.append(p)
+
+    enr = enroll_user(model, paths,
+                      background_audio_paths=args.background,
+                      target_fa_per_hr=args.target_fa,
+                      n_augmented=args.n_aug, device=args.device)
+    save_enrollment(enr, args.out)
+    print(f"\n{_G}✅  Ready! Run: python src/demo.py detect --enrollment {args.out}{_R}")
+
+
 def main():
     p = argparse.ArgumentParser(description="DISENT-KWS v2 demo")
     p.add_argument("--device", default="cpu")
@@ -94,6 +147,21 @@ def main():
     pe.add_argument("--target-fa",  type=float, default=1.0)
     pe.add_argument("--n-aug",      type=int,   default=30)
     pe.add_argument("--out",        default="enrollment.pt")
+
+    pr = sub.add_parser("record")
+    pr.add_argument("--model",      default="model_final.pt")
+    pr.add_argument("--mic",        default=None,
+                    help="Microphone device name/ID (default: system default)")
+    pr.add_argument("--n-record",   type=int,   default=5,
+                    help="Number of utterances to record (default: 5)")
+    pr.add_argument("--duration",   type=float, default=2.0,
+                    help="Recording duration in seconds (default: 2.0)")
+    pr.add_argument("--out",        default="enrollment.pt")
+    pr.add_argument("--out-dir",    default="recordings",
+                    help="Directory to save raw recordings (default: recordings/)")
+    pr.add_argument("--background", nargs="*", default=None)
+    pr.add_argument("--target-fa",  type=float, default=1.0)
+    pr.add_argument("--n-aug",      type=int,   default=30)
 
     pd = sub.add_parser("detect")
     pd.add_argument("--enrollment", default="enrollment.pt")
@@ -109,6 +177,9 @@ def main():
                              target_fa_per_hr=args.target_fa,
                              n_augmented=args.n_aug, device=args.device)
         save_enrollment(enr, args.out)
+
+    elif args.cmd == "record":
+        _do_live_enroll(args)
 
     elif args.cmd == "detect":
         model = _load_model(args.model, args.device)

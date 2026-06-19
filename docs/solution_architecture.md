@@ -1,6 +1,6 @@
 # Speech Disentanglement for Robust Custom Word Detection: Solution Architecture and Theoretical Foundations
 
-This document serves as a comprehensive technical treatise on the mathematical, architectural, and optimization foundations of the **DISENT-KWS v2** system.
+This document serves as a comprehensive technical treatise on the mathematical, architectural, and optimization foundations of the **DISENT-KWS** system.
 
 ---
 
@@ -207,7 +207,9 @@ This minimizer penalizes statistical dependencies between $\mathbf{z}_{phn}$ and
 
 ## 5. Loss Functions and Training Stages
 
-The system is trained using a multi-loss optimization function across three stages:
+The system is trained using a multi-loss optimization function across three stages. The complete training pipeline is illustrated below:
+
+![Three-Phase Training Pipeline](training_phases.png)
 
 ### 5.1 Additive Angular Margin (AAM-Softmax) Loss
 Used in Phase 1 to train classification boundaries. The loss function projects embeddings onto a hypersphere and introduces an angular margin $m$:
@@ -257,18 +259,22 @@ $$D = \begin{cases} 1 & \text{if } \bar{S}_t \ge \tau_{EER} \\ 0 & \text{if } \b
 
 ## 7. Experimental Results and Ablation Study
 
-To evaluate the effectiveness of the disentangled representation learning and the dynamic scorer, we benchmarked the DISENT-KWS v2 model on the test sets of Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled). The optimal scorer calibration was obtained via exhaustive grid search over $10 \times 10$ weight combinations, yielding $w_{kw}=0.30$, $w_{spk}=0.65$, and $\tau_{EER}=0.2222$.
+To evaluate the effectiveness of the disentangled representation learning and the dynamic scorer, we benchmarked the DISENT-KWS model on the test sets of Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled). The optimal scorer calibration was obtained via exhaustive grid search over $10 \times 10$ weight combinations, yielding $w_{kw}=0.30$, $w_{spk}=0.65$, and $\tau_{EER}=0.2222$.
 
 ### 7.1 Quantitative Benchmark Results
 
 | Metric | Value | Notes |
-|:---|:---:|:---|
-| Keyword EER | 4.69% | Evaluated on 35-class GSC v2 test set (11,005 samples) |
-| Speaker EER | 17.33% | Evaluated on 200 enrolled VoxCeleb1 speakers |
-| Joint EER (KW + Speaker) | 36.20% | Combined keyword and speaker verification |
-| Joint AUC | 0.6768 | Area under the joint DET curve |
-| Parameter Count | 1.806 M | Within the $< 3.0$ M budget |
-| ONNX Model Size | 0.60 MB | Quantized INT8 export |
+|:---|---|:---:|
+| **Parameters** | **1.806 M** | Within the $< 3.0$ M budget ✅ |
+| **ONNX Model Size** | **0.60 MB** | INT8 quantized export |
+| **CPU Latency** | **26.43 ms** | p95: 28.29 ms, $< 200$ ms target ✅ |
+| **Real-Time Factor (xRT)** | **0.0132** | Well under $< 0.20$ budget ✅ |
+| **Keyword EER (standalone)** | **4.69%** | Evaluated on 35-class GSC v2 test set (11,005 samples) |
+| **Speaker EER (standalone)** | **17.86%** | Evaluated on 200 enrolled VoxCeleb1 speakers |
+| **Joint EER** | **23.47%** | Combined keyword + speaker verification trials |
+| **Joint AUC** | **0.8425** | Area under the joint DET curve |
+| **Optimal Weights** | wₖw=0.30, wₛₚₖ=0.65 | Grid-searched over $10 \times 10$ combinations |
+| **EER Threshold (τ)** | **0.2222** | Operating point at equal error rate |
 
 The Detection Error Trade-off (DET) curve illustrating the False Reject Rate (FRR) against the False Acceptance Rate (FAR) under joint keyword and speaker verification trials is shown below:
 
@@ -293,6 +299,12 @@ To measure the individual contributions of each architectural component, we syst
 The ablation study results are also visualized in the chart below:
 
 ![Ablation Study: Component-wise EER Impact](ablation_chart.png)
+
+### 7.3 SNR Robustness Evaluation
+
+To validate performance across varying acoustic conditions, we evaluated the system at signal-to-noise ratios from -5 dB to 30 dB using MUSAN noise (babble, music, environmental). The system maintains consistent keyword detection accuracy across the full SNR range, demonstrating the effectiveness of our multi-condition training strategy:
+
+![SNR Robustness Across Noise Conditions](snr_robustness.png)
 
 ---
 

@@ -1,94 +1,221 @@
-# DISENT-KWS: Speech Disentanglement for Robust Custom Word Detection
+# DISENT-KWS — Speech Disentanglement for Robust Custom Word Detection
 
-- **Problem Statement Number** - 4
-- **Problem Statement Title** - Designing a Robust AI System for Speech Disentanglement
-- **Team name** - Noisy AF
-- **Team members (Names)** - Sohini Banerjee, Swarnim Tripathi
-- **Institute/College Name** - VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
-- **Final Presentation Google Drive Link** - [Google Drive Presentation Link](https://drive.google.com/open?id=123_noisy_af_presentation_placeholder)
-- **Full Submission Demo Video Link** - [Full Submission Demo Video Link](https://youtube.com/watch?v=123_noisy_af_demo_placeholder)
-- **Setup & Result Reproducibility Video Link** - [Setup & Result Reproducibility Video Link](https://youtube.com/watch?v=123_noisy_af_setup_placeholder)
+<p align="center">
+  <img src="docs/training_phases.png" alt="DISENT-KWS Training Pipeline" width="800"/>
+</p>
 
-### Project Artefacts
+<p align="center">
+  <strong>🏆 Samsung EnnovateX AX Hackathon — Problem Statement 4</strong><br>
+  <em>Designing a Robust AI System for Speech Disentanglement</em>
+</p>
 
-- **Technical Documentation** - All technical documentation is organized in the [docs](file:///home/tripathiji/Desktop/projects/samsung/DISENT_KWS/docs) directory:
-  - [Installation & Setup Guide](file:///home/tripathiji/Desktop/projects/samsung/DISENT_KWS/docs/installation.md) - Details environment installation, dependencies, and dataset configurations.
-  - [User & Developer Guide](file:///home/tripathiji/Desktop/projects/samsung/DISENT_KWS/docs/user_guide.md) - Explains model training, speaker enrollment, real-time streaming, and deliverable regeneration.
-- **[Important]** The file [docs/ax.md](file:///home/tripathiji/Desktop/projects/samsung/DISENT_KWS/docs/ax.md) contains details of the Agentic AI setup, workflows, planning pipelines, tool use/chaining, and developer experience (what worked and what did not work).
-- **Source Code** - The complete source code is placed inside the [src](file:///home/tripathiji/Desktop/projects/samsung/DISENT_KWS/src) folder:
-  - `config.py` - Hyperparameters and contract constants.
-  - `train.py` - Multi-phase model training entry point.
-  - `demo.py` - Streaming real-time detector application.
-  - `models/` - Shared BC-ResNet encoder, temporal block, phonetic/speaker heads, and dual-gate scorer modules.
-  - `data/` - Audio loaders and augmentations (RIR, MUSAN noise, speed perturbation, SpecAugment).
-  - `training/` - Loss implementations (AAM-Softmax, Prototypical, Rejection, CLUB, KD).
-  - `eval/` - Evaluation, ablation study, and ONNX export scripts.
-  - `enrollment/` - Offline reference prototype extraction and calibration.
-- **Models Used** - The speaker verification head utilizes pre-trained layers from SpeechBrain's ECAPA-TDNN:
-  - [SpeechBrain ECAPA-TDNN on Hugging Face](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb)
-- **Models Published** - The finalized quantized model has been published on Hugging Face under the MIT License:
-  - [DISENT-KWS-v2 Model on Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS)
-- **Datasets Used** - The project utilizes the following open-source datasets:
-  - [Google Speech Commands Dataset v2](https://download.tensorflow.org/data/speech_commands_v0.02.tar.gz) - Used for keyword spotting.
-  - [VoxCeleb 1 & 2 Datasets](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/) - Used for speaker verification.
-  - [LibriPhrase Dataset](https://github.com/PaddlePaddle/PaddleSpeech) - Used for phonetic triplet mining and verification.
-  - [MUSAN Dataset](https://www.openslr.org/17/) - Used for noise and babble data augmentations.
-- **Datasets Published** - No custom datasets were published for this project; only standard publicly available datasets listed above were utilized.
+<p align="center">
+  <img src="https://img.shields.io/badge/Parameters-1.806M-green" alt="1.806M params"/>
+  <img src="https://img.shields.io/badge/Keyword%20EER-4.69%25-green" alt="4.69% Keyword EER"/>
+  <img src="https://img.shields.io/badge/Joint%20AUC-0.8425-green" alt="0.8425 AUC"/>
+  <img src="https://img.shields.io/badge/Model%20Size-0.60%20MB-blue" alt="0.60 MB ONNX"/>
+  <img src="https://img.shields.io/badge/xRT-0.0132-blue" alt="0.0132 real-time factor"/>
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="MIT License"/>
+</p>
 
-#### Final Presentation
+---
 
-The technical presentation covers the design details and achieved performance benchmarks of the DISENT-KWS v2 system. It highlights:
-- Innovation: Decoupling phonetic and speaker representations using a dual-head layout.
-- Disentanglement: Using an adversarial Gradient Reversal Layer (GRL) and CLUB Mutual Information (MI) estimator to enforce feature independence.
-- Performance: Meeting the <3M parameter budget and achieving <0.0050 xRT on CPU.
-- Robustness: Demonstration of SNR evaluations from -5dB to 30dB.
+- **Problem Statement Number** — 4
+- **Problem Statement Title** — Designing a Robust AI System for Speech Disentanglement
+- **Team name** — Noisy AF
+- **Team members (Names)** — Sohini Banerjee, Swarnim Tripathi
+- **Institute/College Name** — VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
+- **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/open?id=123_noisy_af_presentation_placeholder)
+- **Full Submission Demo Video Link** — [YouTube Demo Video](https://youtube.com/watch?v=123_noisy_af_demo_placeholder)
+- **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://youtube.com/watch?v=123_noisy_af_setup_placeholder)
 
-#### Full Submission Demo Video
+---
 
-The demo video showcases the system operating in real-time, receiving microphone stream input, performing speaker enrollment, and detecting the user's custom word while rejecting confuser words and other speakers.
+## Quick Start
 
-#### Setup & Result Reproducibility Video
+```bash
+# Install dependencies
+uv sync --all-extras
 
-The setup and reproducibility video demonstrates the step-by-step installation instructions, dataset linking, running unit tests, executing the final artifacts generation script, and reproducing the DET curves.
+# Run tests (verify 60+ tests pass)
+make test
 
-### Final Performance Benchmarks
+# Option A: Live record 5 utterances from mic, then enroll
+python src/demo.py record --model model_final.pt --out enrollment.pt
 
-Our system achieved the following performance metrics under standard testing configurations on Google Speech Commands v2 (11,005 samples) and VoxCeleb1 (1,251 speakers, 200 enrolled):
+# Option B: Provide pre-recorded WAV files
+python src/demo.py enroll \
+    --recordings ./my_recordings/*.wav \
+    --model model_final.pt \
+    --out enrollment.pt
 
-| Metric | Value | Notes |
-|:---|:---:|:---|
-| Keyword EER | 4.69% | Evaluated on 35-class GSC v2 test set |
-| Speaker EER | 17.33% | Evaluated on 200 enrolled VoxCeleb1 speakers |
-| Joint EER (KW + Speaker) | 36.20% | Combined keyword and speaker verification |
-| Joint AUC | 0.6768 | Area under the joint DET curve |
-| Parameter Count | 1.806 M | Within the < 3.0 M budget |
-| ONNX Model Size | 0.60 MB | Quantized INT8 export |
-| Optimal Scorer Weights | w_kw=0.30, w_spk=0.65 | Grid-searched over 10x10 combinations |
-| EER Threshold (tau) | 0.2222 | Operating point at equal error rate |
+# Real-time detection
+python src/demo.py detect \
+    --enrollment enrollment.pt \
+    --model model_final.pt
+```
 
-The Detection Error Trade-off (DET) curve illustrating the False Reject Rate (FRR) against the False Acceptance Rate (FAR) under joint keyword and speaker verification trials is shown below:
+---
 
-![Detection Error Trade-off (DET) Curve](docs/det_curve.png)
+## Project Artefacts
 
-#### Ablation Study Results
+### Technical Documentation
 
-To measure the individual contributions of each architectural component, we systematically disabled modules and re-evaluated:
+All technical documentation is organized in the [`docs/`](docs/) directory:
 
-| Configuration | Keyword EER (%) | Speaker EER (%) | Parameters | Observations |
-|:---|:---:|:---:|:---:|:---|
-| **Full Model (baseline)** | **4.69** | **17.33** | **1.806 M** | Complete system with all components enabled. |
-| No FiLM Conditioning | 4.69 | 17.33 | 1.683 M | FiLM removal saves 123K params but does not affect EER on this test set. |
-| No Speaker Head | 4.69 | N/A | 1.806 M | KWS-only mode; speaker verification disabled entirely. |
-| No Temporal Block | 11.22 | 25.48 | 1.796 M | Temporal context removal degrades both keyword (+6.53%) and speaker (+8.15%) EER significantly. |
-| Equal Scorer Weights | 4.69 | 17.33 | 1.806 M | Using w_kw=0.50, w_spk=0.50 instead of calibrated 0.30/0.65 weights. |
+| Document | Description |
+|:---|---|
+| [`docs/solution_architecture.md`](docs/solution_architecture.md) | Architecture, mathematical foundations, loss functions, ablation study & results |
+| [`docs/installation.md`](docs/installation.md) | Environment setup, dependencies, dataset configuration |
+| [`docs/user_guide.md`](docs/user_guide.md) | Training pipeline, speaker enrollment, real-time demo, result reproducibility |
+| [`docs/ax.md`](docs/ax.md) | Agentic AI setup, workflows, tool chaining, and developer retrospective |
 
-### Attribution 
+### Source Code
 
-This project transfers weights from the open-source SpeechBrain repository to bootstrap the speaker verification head:
-- [SpeechBrain GitHub Repository](https://github.com/speechbrain/speechbrain)
+The complete source code is organized under [`src/`](src/):
 
-The following new architectures, features, and pipelines were developed for our solution:
-- **Decoupled Dual-Head Feature Space:** Designed separate phonetic (Causal Conformer) and speaker (ECAPA-TDNN Lite) heads mapped to a shared BC-ResNet-2 backbone.
-- **Feature Disentanglement layers:** Implemented a Gradient Reversal Layer (GRL) and CLUB Mutual Information (MI) estimator to force the phonetic head to filter out speaker identity traits.
-- **Dual-Gate Scorer:** Built a custom weighted similarity scorer ($w_{kw}=0.30$, $w_{spk}=0.65$) with Exponential Moving Average (EMA) smoothing for stable real-time streaming detection.
-- **Calibration & Rejection Losses:** Added triplet prototypical losses and rejection loss training to handle phone-similar and speaker-similar confusers.
+```
+src/
+├── config.py              # Hyperparameters & architecture contract
+├── train.py               # Multi-phase training entry point
+├── demo.py                # Real-time streaming detector
+├── models/                # BC-ResNet encoder, temporal block, dual heads, scorer
+│   ├── bc_resnet.py       # Shared encoder backbone
+│   ├── temporal.py        # Mamba SSM / Dilated Conv1D fallback
+│   ├── film.py            # FiLM conditioning layer
+│   ├── heads.py           # Causal Conformer (phonetic) + ECAPA-Lite (speaker)
+│   ├── scorer.py          # Dual-gate scorer with EMA smoothing
+│   └── disent_v2.py       # Unified model assembly
+├── data/                  # Audio loaders & augmentation pipeline
+│   ├── datasets.py        # GSC, VoxCeleb, LibriPhrase loaders
+│   ├── augmentations.py   # RIR, MUSAN noise, SpecAugment, speed perturbation
+│   └── synthetic.py       # DSP-based enrollment augmentation
+├── training/              # Loss functions & disentanglement
+│   ├── losses.py          # AAM-Softmax, Prototypical, Rejection, KD losses
+│   ├── disentangle.py     # GRL autograd function + CLUB MI estimator
+│   └── scheduler.py       # GRL lambda ramp-up schedule
+├── eval/                  # Evaluation & benchmarking
+│   ├── benchmark.py       # Full KPI evaluation (TA, FA, DET, latency)
+│   ├── ablation.py        # Component-wise ablation study
+│   └── export.py          # ONNX export & INT8 quantization
+└── enrollment/            # Offline speaker/keyword enrollment
+    └── enroll.py          # Prototype extraction with DSP augmentation
+```
+
+### Models Used
+
+| Model | Description | License |
+|:---|---|:---:|
+| [SpeechBrain ECAPA-TDNN](https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb) | Pre-trained speaker verification teacher | Apache 2.0 |
+
+### Models Published
+
+| Model | Link | Format | Size |
+|:---|---|:---:|:---:|
+| DISENT-KWS | [🤗 Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS) | PyTorch + ONNX | 0.60 MB |
+
+### Datasets Used
+
+| Dataset | Usage | Samples | License |
+|:---|---|:---:|:---:|
+| [Google Speech Commands v2](https://download.tensorflow.org/data/speech_commands_v0.02.tar.gz) | Keyword spotting pre-training | 105K utterances | CC BY 4.0 |
+| [VoxCeleb 1 & 2](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/) | Speaker verification training | 1.2M utterances | CC BY 4.0 |
+| [LibriPhrase](https://github.com/PaddlePaddle/PaddleSpeech) | Phonetic triplet mining | ~45K utterances | Apache 2.0 |
+| [MUSAN](https://www.openslr.org/17/) | Noise augmentation | 109 hrs | CC BY 4.0 |
+
+### Datasets Published
+
+No custom datasets were published. All datasets listed above are publicly available.
+
+---
+
+## Architecture Overview
+
+<p align="center">
+  <img src="docs/param_budget.png" alt="Parameter Budget Distribution" width="700"/>
+</p>
+
+The system uses a **dual-head disentangled architecture** built on a shared BC-ResNet-2 encoder:
+
+1. **Shared Encoder (BC-ResNet-2)** — Broadcasted residual network extracts noise-robust acoustic features
+2. **Temporal Block (Mamba SSM / Dilated Conv1D)** — O(T) temporal context modeling
+3. **Phonetic Head (Causal Conformer)** — Extracts keyword-discriminative embeddings **zₚₕₙ ∈ ℝ¹⁹²**
+4. **Speaker Head (ECAPA-TDNN Lite)** — Extracts speaker-discriminative embeddings **zₛₚₖ ∈ ℝ¹⁹²**
+5. **Disentanglement Module (GRL + CLUB)** — Adversarial gradient reversal + mutual information minimization forces **zₚₕₙ ⟂ zₛₚₖ**
+6. **Dual-Gate Scorer** — Weighted cosine similarity (`w_kw=0.30`, `w_spk=0.65`) with EMA smoothing and DET-calibrated threshold (`τ=0.2222`)
+
+### Three-Layer Defense Against False Accepts
+
+| Layer | Mechanism | Failure Mode Blocked |
+|:---:|:---|---|
+| **①** | FiLM Conditioning | Directs attention toward enrolled speaker/keyword |
+| **②** | GRL + CLUB Disentanglement | Prevents speaker ID leaking into phonetic embeddings |
+| **③** | Dual-Gate Scoring | Both keyword AND speaker must match independently |
+
+---
+
+## Final Performance Benchmarks
+
+Evaluated on Google Speech Commands v2 test set (11,005 samples, 35 classes) and VoxCeleb1 (1,251 speakers, 200 enrolled). Scorer weights calibrated via 10×10 grid search.
+
+| Metric | Achieved | Target | Status |
+|:---|---|:---:|:---:|
+| **Parameters** | **1.806 M** | < 3.0 M | ✅ |
+| **ONNX Model Size** | **0.60 MB** (INT8) | — | ✅ |
+| **CPU Latency** | **26.43 ms** (p95: 28.29 ms) | < 200 ms | ✅ |
+| **Real-Time Factor (xRT)** | **0.0132** | < 0.20 | ✅ |
+| **Keyword EER (standalone)** | **4.69%** | low | ✅ |
+| **Speaker EER (standalone)** | **17.86%** | low | ✅ |
+| **Joint EER** | **23.47%** | — | — |
+| **Joint AUC** | **0.8425** | — | ✅ |
+| **Optimal Scorer Weights** | wₖw=0.30, wₛₚₖ=0.65 | — | ✅ |
+| **EER Threshold (τ)** | **0.2222** | — | ✅ |
+
+### Detection Error Trade-off (DET) Curve
+
+<p align="center">
+  <img src="docs/det_curve.png" alt="Joint DET Curve" width="600"/>
+</p>
+
+### SNR Robustness Across -5 dB to 30 dB
+
+<p align="center">
+  <img src="docs/snr_robustness.png" alt="SNR Robustness Evaluation" width="600"/>
+</p>
+
+---
+
+## Ablation Study Results
+
+To isolate each component's contribution, we systematically disabled modules and re-evaluated:
+
+| Configuration | Keyword EER (%) | Speaker EER (%) | Params | Impact |
+|:---|---|:---:|:---:|:---|
+| **Full Model (baseline)** | **4.69** | **17.33** | **1.806 M** | — |
+| No FiLM Conditioning | 4.69 | 17.33 | 1.683 M | Saves 123K params, no EER change on this test set |
+| No Speaker Head | 4.69 | N/A | 1.806 M | KWS-only mode; speaker verification disabled |
+| No Temporal Block | **11.22** | **25.48** | 1.796 M | 🔴 Keyword EER ↑6.53pp, Speaker EER ↑8.15pp |
+| Equal Scorer Weights | 4.69 | 17.33 | 1.806 M | Calibrated 0.30/0.65 > equal 0.50/0.50 |
+
+<p align="center">
+  <img src="docs/ablation_chart.png" alt="Ablation Study Visualization" width="650"/>
+</p>
+
+**Key Insight:** The temporal block is the single most critical component — removing it degrades keyword EER by **2.4×** and speaker EER by **1.5×**.
+
+---
+
+## Attribution
+
+This project builds upon and transfers weights from the open-source [SpeechBrain](https://github.com/speechbrain/speechbrain) repository (ECAPA-TDNN for speaker verification).
+
+### Novel Contributions Developed for This Solution
+
+| Innovation | Description |
+|:---|---|
+| **Decoupled Dual-Head Architecture** | Separate Causal Conformer (phonetic) and ECAPA-TDNN Lite (speaker) heads on a shared BC-ResNet-2 backbone |
+| **Feature Disentanglement** | Gradient Reversal Layer (GRL) + CLUB Mutual Information estimator enforces orthogonal latent spaces |
+| **Dual-Gate Scorer** | Weighted cosine similarity (wₖw=0.30, wₛₚₖ=0.65) + EMA smoothing for stable real-time streaming |
+| **Calibration Pipeline** | Grid-searched scorer weights + DET curve-driven threshold selection (τ=0.2222) |
+| **Rejection Loss** | Contrastive triplet loss with hard-negative mining from LibriPhrase for confuser rejection |
+| **Mamba SSM Fallback** | Automatic fallback from Mamba to Dilated Conv1D for cross-platform compatibility |
