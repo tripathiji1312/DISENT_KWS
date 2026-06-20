@@ -20,9 +20,9 @@
 - **Team name** — Noisy AF
 - **Team members (Names)** — Sohini Banerjee, Swarnim Tripathi
 - **Institute/College Name** — VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
-- **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/open?id=123_noisy_af_presentation_placeholder)
-- **Full Submission Demo Video Link** — [YouTube Demo Video](https://youtube.com/watch?v=123_noisy_af_demo_placeholder) (or the same video as Setup & Reproducibility if combined into one)
-- **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://youtube.com/watch?v=123_noisy_af_setup_placeholder)
+- **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/file/d/1hWU8jsb0nKK2WPf7PuUugwubXvFU0PYz/view?usp=sharing)
+- **Full Submission Demo Video Link** — [YouTube Demo Video](https://www.youtube.com/watch?v=eC_ie05pqCo)
+- **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://www.youtube.com/watch?v=eC_ie05pqCo)
 
 ---
 
