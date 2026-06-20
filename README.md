@@ -22,7 +22,7 @@
 - **Institute/College Name** — VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
 - **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/file/d/1hWU8jsb0nKK2WPf7PuUugwubXvFU0PYz/view?usp=sharing)
 - **Full Submission Demo Video Link** — [YouTube Demo Video](https://www.youtube.com/watch?v=eC_ie05pqCo)
-- **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://www.youtube.com/watch?v=eC_ie05pqCo)
+- **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://www.youtube.com/watch?v=UKxMe3Y_UxQ)
 
 ---
 
