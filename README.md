@@ -105,7 +105,9 @@ src/
 
 | Model | Link | Format | Size |
 |:---|---|:---:|:---:|
-| DISENT-KWS | [🤗 Hugging Face](https://huggingface.co/tripathiji1312/DISENT-KWS) | PyTorch + ONNX | 7 MB + 0.60 MB |
+| DISENT-KWS | [🤗 Hugging Face (free tier)](https://huggingface.co/tripathiji1312/DISENT-KWS) | PyTorch + ONNX | 7 MB + 0.60 MB |
+
+The model is hosted on Hugging Face's **free tier** — no payment required to download or use.
 
 ### Datasets Used
 

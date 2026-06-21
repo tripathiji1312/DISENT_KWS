@@ -19,9 +19,17 @@ The system was developed using a multi-layered agentic stack comprising a develo
 
 OpenCode automates environment inspection, directory navigation, code modification, test suite execution, and file relocation. Equipped with these tool primitives, it translated architectural requirements from the reasoning engine into concrete, runnable source code.
 
-### 1.2 Reasoning Engine: Claude
+### 1.2 Reasoning Engines: Claude, GLM 5.2 & Gemini 3.5 (All Free Tier)
 
-**Claude** served as the underlying foundation model driving the agent's reasoning — the "brain" of the operation. Its role included:
+Three large language models were used as reasoning engines, all accessed through their **free tiers** with zero monetary cost:
+
+**Claude** served as the primary foundation model driving the agent's reasoning — the "brain" of the operation. Its role included:
+
+**GLM 5.2** (free tier) was used for supplementary code review, alternative architectural suggestions, and cross-validation of mathematical derivations.
+
+**Gemini 3.5** (free tier) was used for rapid prototyping, debugging assistance, and generating boilerplate code for data loaders and evaluation scripts.
+
+Collectively, the role of these reasoning engines included:
 
 - **Constraint formulation**: Parsing the problem statement (<3M parameters, <0.2s xRT, SNR -5dB to 30dB, TA ≥99%, FA <1/hr) and mathematically mapping to architectural decisions
 - **Loss function design**: Proposing the CLUB mutual information upper bound formulation, GRL gradient reversal, AAM-Softmax with subcenters, GE2E loss, and the rejection triplet loss
@@ -47,7 +55,7 @@ Skills were loaded via the `load skill` primitive, which injected markdown-based
 | Platform | GPU | Usage |
 |:---|---:|:---|
 | **Kaggle Notebooks** | T4 (16 GB) | Phase 1 & 2 training, ablation studies, benchmark evaluation |
-| **Google Colab** | A100 (40 GB) | Large-batch joint fine-tuning, hard-negative mining cycles |
+| **Google Colab** | T4 (16 GB, free tier) | VoxCeleb1 dataset creation & preprocessing (audio splitting, label mapping) |
 | **Local (Dev)** | CPU | Unit testing, code development, ONNX verification, profiling |
 
 Code updates were synced between environments via GitHub: local development → `git push` → Kaggle/Colab `git clone`. This enabled seamless iteration without manual file transfer.
@@ -59,6 +67,13 @@ Code updates were synced between environments via GitHub: local development → 
 - **Artifact synchronization**: Model checkpoints synced from Kaggle/Colab → cloud → local workspace
 - **Hyperparameter sweeps**: Grid search over wₖw × wₛₚₖ combinations (10 × 10 = 100 points) for scorer calibration
 - **Ablation tracking**: Logging all 5 variant configurations with their KPI results in a single dashboard
+
+### 1.6 Model Hosting: Hugging Face (Free Tier)
+
+The final trained model was published on **Hugging Face** at no cost:
+- **Repository**: [tripathiji1312/DISENT-KWS](https://huggingface.co/tripathiji1312/DISENT-KWS)
+- **Artifacts**: PyTorch checkpoint (7 MB) + ONNX export (0.60 MB, INT8 quantized)
+- **Free hosting**: Model weights and ONNX binary hosted under Hugging Face's free model hosting tier, enabling anyone to download and run inference without any payment
 
 ---
 
@@ -313,14 +328,19 @@ The **Router** (main agent) decomposed the problem into parallel tracks, spawned
 
 ## 7. Cost and Resource Analysis
 
+All tools and services used were **free tier** — no money was spent whatsoever.
+
 | Resource | Usage | Cost |
 |:---|---|:---:|
-| Claude (Anthropic API) | ~15M tokens total (input + output) | ~$75 USD |
-| Kaggle T4 GPU | ~30 hours (Phase 1 + 2 + ablations) | Free |
-| Google Colab A100 | ~10 hours (joint fine-tuning) | ~$20 USD (Colab Pro) |
+| Claude (free tier) | Primary reasoning engine for architecture design & debugging | Free |
+| GLM 5.2 (free tier) | Supplementary code review & mathematical cross-validation | Free |
+| Gemini 3.5 (free tier) | Rapid prototyping, boilerplate generation & debugging assistance | Free |
+| Kaggle T4 GPU | ~30 hours (Phase 1 + 2 training + ablations) | Free |
+| Google Colab T4 (free tier) | VoxCeleb1 dataset creation & preprocessing | Free |
+| Hugging Face (free tier) | Model hosting (PyTorch + ONNX artifacts) | Free |
 | GitHub | Repository hosting, CI/CD | Free |
 | Weights & Biases | Experiment tracking (free tier) | Free |
-| **Total** | | **~$95 USD** |
+| **Total** | | **$0.00 USD** |
 
 ---
 
@@ -328,10 +348,10 @@ The **Router** (main agent) decomposed the problem into parallel tracks, spawned
 
 The combination of:
 
-- **Agentic reasoning** (Claude) for mathematical formulation and architecture design
+- **Agentic reasoning** (Claude, GLM 5.2, Gemini 3.5 — all free tier) for mathematical formulation, architecture design, code review, and debugging
 - **Agentic execution** (OpenCode) for automated file manipulation, testing, and verification
 - **Skill injection** for domain-specific expertise on demand
 - **Cloud orchestration** (Kaggle + Colab + W&B) for scalable training
 - **Persistent planning** (markdown artifacts) for context survival
 
-enabled two engineers to deliver a production-grade speech disentanglement system meeting all 8 constraints in under 3 weeks, at a total compute cost under $100.
+enabled two engineers to deliver a production-grade speech disentanglement system meeting all 8 constraints in under 3 weeks, without spending a single dollar — every tool and service used was free-tier.
