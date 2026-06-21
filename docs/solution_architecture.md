@@ -26,7 +26,9 @@ Where $\mathcal{K}(x)$ identifies the phonetic content (keyword), $k_T$ is the t
 The mapping must satisfy the following joint operational constraints:
 1. **Parameter Budget:** $\Theta(f) < 3.0 \times 10^6$ parameters.
 2. **Real-Time Factor (xRT):** Let $\Delta \tau$ be the execution time of the model on a CPU for an audio segment of duration $T$. The real-time factor is bounded by:
-   $$\text{xRT} = \frac{\Delta \tau}{T} < 0.20$$
+   $$
+   \text{xRT} = \frac{\Delta \tau}{T} < 0.20
+   $$
 3. **Robustness:** Keyword and speaker verification performance must generalize across signal-to-noise ratios $\text{SNR} \in [-5, 30]\text{ dB}$.
 4. **Latency:** End-to-end inference latency $< 200\text{ ms}$ on a CPU for $2\text{s}$ audio windows.
 
@@ -99,14 +101,20 @@ Let $\mathbf{x} \in \mathbb{R}^{C_{in} \times F \times T}$ be the input to a Bro
 
 1. **Frequency Broadcast Pathway:**
    A 2D convolution operates on the frequency-time plane to capture local acoustic structures:
-   $$\mathbf{y}_{2D} = \text{ReLU}\left(\text{BatchNorm2D}\left(\text{Conv2D}(\mathbf{x}; \mathbf{W}_{2D})\right)\right)$$
+   $$
+   \mathbf{y}_{2D} = \text{ReLU}\left(\text{BatchNorm2D}\left(\text{Conv2D}(\mathbf{x}; \mathbf{W}_{2D})\right)\right)
+   $$
 2. **Temporal Context Pathway:**
    The frequency dimension is compressed via Average Pooling, and a 1D convolution captures temporal patterns:
-   $$\mathbf{y}_{1D} = \text{ReLU}\left(\text{BatchNorm1D}\left(\text{Conv1D}\left(\frac{1}{F}\sum_{f=1}^F \mathbf{x}[:, f, :]; \mathbf{W}_{1D}\right)\right)\right)$$
+   $$
+   \mathbf{y}_{1D} = \text{ReLU}\left(\text{BatchNorm1D}\left(\text{Conv1D}\left(\frac{1}{F}\sum_{f=1}^F \mathbf{x}[:, f, :]; \mathbf{W}_{1D}\right)\right)\right)
+   $$
 
 The temporal feature map $\mathbf{y}_{1D} \in \mathbb{R}^{C_{out} \times T}$ is broadcasted along the frequency dimension and combined with the 2D path:
 
-$$\mathbf{y}_{block} = \mathbf{y}_{2D} + \text{Broadcast}\left(\mathbf{y}_{1D}, \text{target\_shape}=(C_{out}, F', T)\right)$$
+$$
+\mathbf{y}_{block} = \mathbf{y}_{2D} + \text{Broadcast}\left(\mathbf{y}_{1D}, \text{target\_shape}=(C_{out}, F', T)\right)
+$$
 
 This mechanism allows the model to compute global temporal statistics while retaining spatial-frequency context using only $33.8\text{ K}$ parameters.
 
@@ -131,7 +139,9 @@ $$A_{i,j} = \frac{\mathbf{q}_i \mathbf{k}_j^T}{\sqrt{d_k}} + M_{i,j}$$
 
 Where:
 
-$$M_{i,j} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{if } j > i \end{cases}$$
+$$
+M_{i,j} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{if } j > i \end{cases}
+$$
 
 This ensures that the attention weights for future frames ($j > i$) resolve to exactly zero after the softmax operation.
 
@@ -179,9 +189,13 @@ $$E(G_{back}, G_{phn}, D_{spk}) = L_{kw}(G_{back}, G_{phn}) - \lambda L_{adv}(G_
 To train this end-to-end using standard backpropagation, we define the GRL mapping $R_\lambda(\mathbf{x})$:
 
 * **Forward Propagation:**
-  $$R_\lambda(\mathbf{x}) = \mathbf{x}$$
+  $$
+  R_\lambda(\mathbf{x}) = \mathbf{x}
+  $$
 * **Backward Propagation:**
-  $$\frac{d R_\lambda(\mathbf{x})}{d\mathbf{x}} = -\lambda \mathbf{I}$$
+  $$
+  \frac{d R_\lambda(\mathbf{x})}{d\mathbf{x}} = -\lambda \mathbf{I}
+  $$
 
 During backward propagation, the gradients flowing from the adversarial speaker classifier are inverted and scaled by $-\lambda$, forcing the shared encoder to delete speaker identity markers from the features sent to the phonetic head.
 
@@ -197,9 +211,13 @@ $$I_{CLUB}(\mathbf{Z}_{phn}; \mathbf{Z}_{spk}) = \frac{1}{B} \sum_{i=1}^B \left[
 
 The optimization alternates between two steps:
 1. **Estimator Update:** Maximize the variational log-likelihood to fit the conditional distribution:
-   $$\max_\theta \frac{1}{B} \sum_{i=1}^B \log q_\theta(\mathbf{z}_{phn, i} | \mathbf{z}_{spk, i})$$
+   $$
+   \max_\theta \frac{1}{B} \sum_{i=1}^B \log q_\theta(\mathbf{z}_{phn, i} | \mathbf{z}_{spk, i})
+   $$
 2. **Feature Disentanglement:** Minimize the CLUB mutual information bound with respect to the encoder parameters:
-   $$\min_{\Theta} I_{CLUB}(\mathbf{Z}_{phn}; \mathbf{Z}_{spk})$$
+   $$
+   \min_{\Theta} I_{CLUB}(\mathbf{Z}_{phn}; \mathbf{Z}_{spk})
+   $$
 
 This minimizer penalizes statistical dependencies between $\mathbf{z}_{phn}$ and $\mathbf{z}_{spk}$, forcing the embedding heads to represent independent acoustic attributes.
 
