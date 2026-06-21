@@ -249,7 +249,7 @@ The single most effective memory strategy was **the Contract** — `src/config.p
 ```
 
 By centralizing every shared constant (audio parameters, architecture dimensions, loss hyperparameters, scorer weights), we eliminated the "two engineers changing different files and breaking shapes" problem. The Contract was:
-- Written once at the start (Day 0)
+- Written once at the start
 - Only modified after explicit discussion
 - Used by ALL modules as their single source of truth
 

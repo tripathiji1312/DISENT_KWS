@@ -58,8 +58,8 @@ uv run pytest tests/ -k "lfbe" -v
 ```
 tests/
 ├── __init__.py
-├── test_dataloaders.py          # Swarnim Day 1-2 dataloaders
-└── test_models.py               # (Coming: Sohini Day 1-5 models)
+├── test_dataloaders.py          # Data loader tests
+└── test_models.py               # Model tests
 
 scripts/
 ├── run_tests.sh                 # Shell script for local testing
@@ -327,8 +327,8 @@ pytest tests/ --cov=data --cov-report=term-missing
 
 ## Next Steps
 
-- Day 3-5: Add model tests (`tests/test_models.py`)
-- Day 7: Add integration tests (`tests/test_integration.py`)
+- Add model tests (`tests/test_models.py`)
+- Add integration tests (`tests/test_integration.py`)
 - Add performance benchmarks in `tests/test_benchmarks.py`
 
 ---

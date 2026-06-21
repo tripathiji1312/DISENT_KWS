@@ -115,7 +115,7 @@ def train_phase1(
     resume_from:  str | None = None,
 ) -> None:
     if not _LOSSES_OK:
-        raise RuntimeError("training.losses not available — run `git pull` from Swarnim first")
+        raise RuntimeError("training.losses not available")
 
     model = model.to(device).train()
 
@@ -229,7 +229,7 @@ def train_phase2(
     resume_from:  str | None = None,
 ) -> None:
     if not _LOSSES_OK:
-        raise RuntimeError("training.losses not available — run `git pull` from Swarnim first")
+        raise RuntimeError("training.losses not available")
 
     model = model.to(device).train()
 
@@ -398,7 +398,7 @@ def main():
     model  = DISENT_KWS_v2()
     model.count_params()
 
-    # Build data loaders (Swarnim's modules — must be available for phase runs)
+    # Build data loaders
     try:
         from data.datasets      import GSCDataset, VoxCelebDataset, LibriPhraseDataset, LFBETransform as DLFBETransform
         from data.augmentations import AudioAugmentor, SpecAugment
@@ -428,7 +428,7 @@ def main():
 
     except Exception as e:
         print(f"⚠️  DataLoader setup failed: {e}")
-        print("    Ensure Swarnim's data/ modules are merged before running training.")
+        print("    Ensure data/ modules are available before running training.")
         sys.exit(1)
 
     if args.phase == 1:

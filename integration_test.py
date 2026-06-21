@@ -1,7 +1,6 @@
 """
 integration_test.py
 ===================
-Day-7 checkpoint — run this TOGETHER before starting Week-2 training.
 
 Tests:
   1. Model instantiation + param budget (< 3 M)
@@ -54,7 +53,7 @@ def fail(msg: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Import all Sohini's modules (will raise clearly if anything is broken)
+# Import all modules (will raise clearly if anything is broken)
 # ---------------------------------------------------------------------------
 
 section("Imports")
@@ -72,7 +71,7 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(f"\n{FAIL}  Import failed — fix this before proceeding.\n{e}")
 
-# Import Swarnim's modules — soft-fail so Sohini can run independently
+# Import loss/scheduler modules — soft-fail if not available
 _LOSSES_OK = False
 _SCHED_OK  = False
 try:
@@ -183,7 +182,7 @@ ok("No NaN / Inf in gradients")
 
 
 # ---------------------------------------------------------------------------
-# 4. Loss functions  (Swarnim's module, skip if not available)
+# 4. Loss functions  (skip if not available)
 # ---------------------------------------------------------------------------
 
 section("Test 4 — Loss Functions")
@@ -242,7 +241,7 @@ if _LOSSES_OK:
     total_loss.backward()
     ok(f"Combined backward OK — total loss = {total_loss.item():.4f}")
 else:
-    print("  ⚠️   Skipped (training.losses not yet available from Swarnim)")
+    print("  ⚠️   Skipped (training.losses not yet available)")
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +263,7 @@ else:
         return float(2.0 / (1.0 + math.exp(-10.0 * p)) - 1.0)
     vals = [_lambda(e, 20) for e in range(21)]
     assert vals[0] < 0.01 and vals[20] > 0.99
-    ok("GRL λ schedule (inline) OK — import Swarnim's scheduler when available")
+    ok("GRL λ schedule (inline) OK")
 
 
 # ---------------------------------------------------------------------------
@@ -383,8 +382,8 @@ print("  🎉  ALL INTEGRATION TESTS PASSED")
 print(f"      Model: {total:,} params  ({total/1e6:.3f}M)")
 print(f"      Temporal backend: {'Mamba SSM' if USE_MAMBA else 'DilatedConv1D'}")
 if not _LOSSES_OK:
-    print("  ⚠️   Re-run after Swarnim pushes training/losses.py")
+    print("  ⚠️   Re-run after training/losses.py is available")
 if not _SCHED_OK:
-    print("  ⚠️   Re-run after Swarnim pushes training/scheduler.py")
+    print("  ⚠️   Re-run after training/scheduler.py is available")
 print(f"{'═'*60}\n")
 print("  → Proceed to Week-2 training on Kaggle.\n")
