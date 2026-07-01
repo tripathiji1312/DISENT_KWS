@@ -1,6 +1,6 @@
 # Agentic AI and Development Tools Report
 
-This report explains the utilization of Agentic AI, large language model reasoning engines, cloud notebook environments, automated workflows, and developer experience insights in implementing and optimizing the **DISENT-KWS** system for the Samsung EnnovateX AX Hackathon.
+This report explains the utilization of Agentic AI, large language model reasoning engines, cloud notebook environments, automated workflows, and developer experience insights in implementing and optimizing the **DISENT-KWS** system.
 
 ---
 
@@ -136,7 +136,7 @@ The developer agent (Antigravity/OpenCode) executed the plan by:
    - FiLM layer with proper broadcasting dimensions
    - Causal attention masking for streaming compatibility
    - GRL autograd Function with correct gradient reversal in backward pass
-4. **Repository Finalization**: Relocated all packages into `src/` directory to comply with hackathon submission guidelines, updating all import paths across 15+ files
+4. **Repository Finalization**: Relocated all packages into `src/` directory for clean project structure, updating all import paths across 15+ files
 
 ### 2.3 Verification Phase (Detail)
 
@@ -354,4 +354,4 @@ The combination of:
 - **Cloud orchestration** (Kaggle + Colab + W&B) for scalable training
 - **Persistent planning** (markdown artifacts) for context survival
 
-enabled two engineers to deliver a production-grade speech disentanglement system meeting all 8 constraints in under 3 weeks, without spending a single dollar — every tool and service used was free-tier.
+enabled two engineers to deliver a production-grade speech disentanglement system meeting all design constraints in under 3 weeks, without spending a single dollar — every tool and service used was free-tier.

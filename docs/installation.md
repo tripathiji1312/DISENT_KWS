@@ -338,6 +338,5 @@ Once your environment is set up and tests pass:
 
 1. **Read the [User Guide](user_guide.md)** — training, enrollment, and real-time demo instructions
 2. **Read the [Solution Architecture](solution_architecture.md)** — mathematical foundations, architecture details, and ablation results
-3. **Read the [Agentic AI Report](ax.md)** — how agentic AI tools were used in development
-4. **Enroll a speaker** — `python src/enrollment/enroll.py --help`
-5. **Run the demo** — `python src/demo.py --help`
+3. **Enroll a speaker** — `python src/enrollment/enroll.py --help`
+4. **Run the demo** — `python src/demo.py --help`

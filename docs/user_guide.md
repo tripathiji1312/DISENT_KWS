@@ -1,6 +1,6 @@
 # User & Developer Guide
 
-This document describes how to train, enroll speakers, run the real-time demo, reproduce benchmark results, and generate final deliverables for the **DISENT-KWS** system.
+This document describes how to train, enroll speakers, run the real-time demo, reproduce benchmark results, and generate project deliverables for the **DISENT-KWS** system.
 
 ---
 
@@ -182,7 +182,7 @@ These are the 5 validation scenarios we tested:
 
 ## 4. Generating Final Submission Deliverables
 
-To regenerate the ONNX model, DET evaluation curve, and ablation study reports from a final trained checkpoint:
+To regenerate the ONNX model, DET evaluation curve, and ablation study reports from a trained checkpoint:
 
 ```bash
 python scripts/generate_final_artifacts.py \

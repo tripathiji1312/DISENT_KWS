@@ -2,7 +2,7 @@
 """
 generate_final_artifacts.py
 
-This script automates the generation of the final submission deliverables:
+This script automates the generation of the final model artifacts:
 1. Exports the PyTorch model checkpoint to ONNX format (model_final.onnx in the repo root).
 2. Generates the ablation study results (ablation_results.csv in the repo root).
 3. Evaluates the model to produce the joint Detection Error Trade-off (DET) curve (docs/det_curve.png).

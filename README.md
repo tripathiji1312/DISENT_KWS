@@ -15,13 +15,7 @@
 
 ---
 
-- **Problem Statement Number** — 4
-- **Problem Statement Title** — Designing a Robust AI System for Speech Disentanglement
-- **Team name** — Noisy AF
-- **Team members (Names)** — Sohini Banerjee, Swarnim Tripathi
-- **Institute/College Name** — VIT Chennai, Vandalur - Kelambakkam Road, Chennai, Tamil Nadu 600127
-- **Final Presentation Google Drive Link** — [Google Drive Presentation Link](https://drive.google.com/file/d/1hWU8jsb0nKK2WPf7PuUugwubXvFU0PYz/view?usp=sharing)
-- **Full Submission Demo Video Link** — [YouTube Demo Video](https://youtu.be/dKjWTKI60Rw)
+- **Demo Video Link** — [YouTube Demo Video](https://youtu.be/dKjWTKI60Rw)
 - **Setup & Result Reproducibility Video Link** — [YouTube Setup Video](https://youtu.be/eU0mwZUcVaE)
 
 ---
@@ -203,6 +197,20 @@ To isolate each component's contribution, we systematically disabled modules and
 ## Attribution
 
 This project builds upon and transfers weights from the open-source [SpeechBrain](https://github.com/speechbrain/speechbrain) repository (ECAPA-TDNN for speaker verification).
+
+## Citation
+
+If you use DISENT-KWS in your research, please cite it:
+
+```bibtex
+@misc{bt2026disentkws,
+  title={DISENT-KWS: Speech Disentanglement for Robust Custom Word Detection},
+  author={Banerjee, Sohini and Tripathi, Swarnim},
+  year={2026},
+  howpublished={\url{https://github.com/tripathiji1312/DISENT_KWS}},
+  note={BC-ResNet-2 backbone with Causal Conformer phonetic head, ECAPA-TDNN Lite speaker head, and GRL+CLUB disentanglement. 1.806M parameters.}
+}
+```
 
 ### Novel Contributions Developed for This Solution
 
