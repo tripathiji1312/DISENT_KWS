@@ -124,3 +124,20 @@ def test_disabled_action():
         )
     )
     assert result["status"] == "disabled"
+
+
+def test_smart_home_action():
+    result = asyncio.run(
+        execute(
+            ActionConfig(type="smart_home", smart_device="lights"),
+            name="Alice",
+            keyword="lights on",
+        )
+    )
+    assert result == {
+        "type": "smart_home",
+        "status": "ok",
+        "device": "lights",
+        "text": "Alice said lights on",
+    }
+

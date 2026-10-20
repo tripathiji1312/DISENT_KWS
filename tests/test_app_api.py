@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.inference import Decision
+from app.registry import RECOMMENDED_KEYWORDS
 from app.server import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,7 +87,7 @@ def test_health_and_state(client: TestClient):
     assert health["models"]["disent"]["state"] == "loaded"
     state = client.get("/api/state").json()
     assert state["people"] == []
-    assert state["recommended_keywords"] == ["stop", "yes", "no"]
+    assert state["recommended_keywords"] == list(RECOMMENDED_KEYWORDS)
 
 
 def test_crud_shared_keyword_and_delete_rules(client: TestClient):
@@ -230,3 +231,14 @@ def test_static_dashboard_is_served(client: TestClient):
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/static/styles.css").status_code == 200
     assert client.get("/static/audio-worklet.js").status_code == 200
+
+
+def test_synthesize_keyword(client: TestClient):
+    response = client.post("/api/keywords/synthesize", json={"text": "Hey Google", "count": 2})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["keyword"] == "Hey Google"
+    assert len(data["takes"]) == 2
+    assert data["takes"][0]["data_url"].startswith("data:audio/wav;base64,")
+    assert data["takes"][0]["sample_rate"] == 16000
+

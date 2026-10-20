@@ -45,7 +45,18 @@ PALETTE = (
     "#a3e635",
 )
 
-RECOMMENDED_KEYWORDS = ("stop", "yes", "no")
+RECOMMENDED_KEYWORDS = (
+    "stop",
+    "yes",
+    "no",
+    "hey google",
+    "alexa",
+    "lights on",
+    "lights off",
+    "play music",
+    "weather",
+    "timer",
+)
 
 
 class RegistryError(Exception):
@@ -99,10 +110,11 @@ def _normalize_vector(vector: np.ndarray | Sequence[float]) -> np.ndarray:
 class ActionConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["announce", "log", "webhook", "shell"] = "announce"
+    type: Literal["announce", "log", "webhook", "shell", "smart_home"] = "announce"
     enabled: bool = True
     webhook_url: str | None = None
     shell_command: str | None = None
+    smart_device: str | None = None
     message_template: str = "{name} said {keyword}"
 
     @field_validator("message_template")

@@ -88,9 +88,15 @@
               <div class="orb-core"></div>
               <div class="orb-shine"></div>
             </div>
+            <div id="google-leds" class="google-leds" aria-hidden="true">
+              <span class="g-dot dot-blue"></span>
+              <span class="g-dot dot-red"></span>
+              <span class="g-dot dot-yellow"></span>
+              <span class="g-dot dot-green"></span>
+            </div>
             <div class="stage-caption" aria-live="polite">
               <p id="stage-status">Ready when you are</p>
-              <p id="stage-substatus" class="muted">Isolated words work best &middot; try <strong>stop</strong>, <strong>yes</strong>, or <strong>no</strong></p>
+              <p id="stage-substatus" class="muted">Try <strong>Hey Google</strong>, <strong>lights on</strong>, <strong>play music</strong>, <strong>timer</strong>, <strong>weather</strong>, or <strong>stop</strong></p>
             </div>
             <div id="drop-hint" class="drop-hint">Drop a WAV anywhere to replay it</div>
             <div class="stage-badges">
@@ -149,6 +155,86 @@
           <div id="live-people" class="people-chips"></div>
         </section>
 
+        <!-- Google Home Hub: Personalized Interactive Smart Display -->
+        <section id="google-home-hub" class="smart-hub glass" aria-labelledby="hub-title">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Google Home Hub</span>
+              <h2 id="hub-title" class="hub-title">Personalized Smart Display</h2>
+            </div>
+            <div id="hub-speaker-badge" class="hub-speaker-badge">
+              <span class="hub-pulse-dot"></span>
+              <span id="hub-speaker-name">Voice Match: Idle</span>
+            </div>
+          </div>
+
+          <div class="hub-devices-grid">
+            <!-- Device 1: Smart Lighting -->
+            <div id="device-light" class="device-card">
+              <div class="device-icon-wrap light-icon">
+                <svg class="device-svg" viewBox="0 0 24 24"><path d="M12 2a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.2V16a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2.8c1.8-1.1 3-3 3-5.2a6 6 0 0 0-6-6Zm-2 16h4v1h-4v-1Zm1 2h2v1h-2v-1Z"/></svg>
+              </div>
+              <div class="device-body">
+                <div class="device-header">
+                  <span class="device-name">Living Room Light</span>
+                  <span id="light-status-pill" class="pill pill-off">OFF</span>
+                </div>
+                <p id="light-desc" class="device-desc muted small">Voice: “lights on” / “lights off”</p>
+              </div>
+              <button id="toggle-light-btn" class="btn tiny ghost device-toggle" type="button">Toggle</button>
+            </div>
+
+            <!-- Device 2: Media Player -->
+            <div id="device-music" class="device-card">
+              <div class="device-icon-wrap music-icon">
+                <svg class="device-svg" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+              </div>
+              <div class="device-body">
+                <div class="device-header">
+                  <span class="device-name">Media Player</span>
+                  <span id="music-status-pill" class="pill pill-off">PAUSED</span>
+                </div>
+                <p id="music-track" class="device-desc muted small">Personalized Playlist</p>
+                <div id="music-bars" class="music-bars" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <button id="toggle-music-btn" class="btn tiny ghost device-toggle" type="button">Play</button>
+            </div>
+
+            <!-- Device 3: Smart Timer -->
+            <div id="device-timer" class="device-card">
+              <div class="device-icon-wrap timer-icon">
+                <svg class="device-svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm1-13h-2v6l5 3 1-1.5-4-2.5Z"/></svg>
+              </div>
+              <div class="device-body">
+                <div class="device-header">
+                  <span class="device-name">Kitchen Timer</span>
+                  <span id="timer-status-pill" class="pill pill-off">READY</span>
+                </div>
+                <p id="timer-display" class="device-desc muted small">Voice: “timer” (10s countdown)</p>
+                <div class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
+              </div>
+              <button id="start-timer-btn" class="btn tiny ghost device-toggle" type="button">Start</button>
+            </div>
+
+            <!-- Device 4: Weather & Routine Briefing -->
+            <div id="device-weather" class="device-card">
+              <div class="device-icon-wrap weather-icon">
+                <svg class="device-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              </div>
+              <div class="device-body">
+                <div class="device-header">
+                  <span class="device-name">Morning Briefing</span>
+                  <span class="pill pill-live">24°C Sunny</span>
+                </div>
+                <p id="weather-desc" class="device-desc muted small">Voice: “weather” or “hey google”</p>
+              </div>
+              <button id="trigger-weather-btn" class="btn tiny ghost device-toggle" type="button">Brief</button>
+            </div>
+          </div>
+        </section>
+
         <div class="lower-grid">
           <section class="timeline glass">
             <div class="section-head">
@@ -159,12 +245,12 @@
           </section>
 
           <section class="tips glass">
-            <div class="section-head"><div><span class="eyebrow">Demo flow</span><p class="muted small">The short version for tomorrow.</p></div></div>
+            <div class="section-head"><div><span class="eyebrow">Assistant commands</span><p class="muted small">Try saying these into your mic:</p></div></div>
             <ol class="tip-list">
-              <li><span>1</span><div><strong>Enroll two people</strong><p>People &rarr; Add person. Use <em>stop</em> for both.</p></div></li>
-              <li><span>2</span><div><strong>Start listening</strong><p>Say just the keyword, then pause.</p></div></li>
-              <li><span>3</span><div><strong>Reveal the person</strong><p>The name, scores, action, and latency appear live.</p></div></li>
-              <li><span>4</span><div><strong>Fallback</strong><p>Drop a WAV on the stage to replay a known clip.</p></div></li>
+              <li><span>1</span><div><strong>“Hey Google” / “Alexa”</strong><p>Wakes assistant with personalized Voice Match.</p></div></li>
+              <li><span>2</span><div><strong>“Lights on” / “Lights off”</strong><p>Toggles lighting in speaker’s signature color.</p></div></li>
+              <li><span>3</span><div><strong>“Play music” / “Stop”</strong><p>Controls your personalized playlist.</p></div></li>
+              <li><span>4</span><div><strong>“Timer” / “Weather”</strong><p>Starts 10s countdown or daily briefing.</p></div></li>
             </ol>
           </section>
         </div>

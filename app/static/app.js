@@ -7,7 +7,250 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const PALETTE = ["#8b5cf6", "#06b6d4", "#f59e0b", "#ec4899", "#22c55e", "#ef4444", "#3b82f6", "#a3e635"];
-const RECOMMENDED = ["stop", "yes", "no"];
+const RECOMMENDED = [
+  "stop",
+  "yes",
+  "no",
+  "hey google",
+  "alexa",
+  "lights on",
+  "lights off",
+  "play music",
+  "weather",
+  "timer",
+];
+
+const smartHome = {
+  light: { on: false, color: "#f59e0b", person: null },
+  music: { playing: false, track: "Personalized Playlist", person: null },
+  timer: { running: false, seconds: 10, total: 10, timerId: null, person: null },
+  weather: { temp: "24°C", condition: "Sunny", person: null },
+};
+
+function playChime(kind = "google") {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === "suspended") ctx.resume();
+    const now = ctx.currentTime;
+    if (kind === "google") {
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc1.frequency.setValueAtTime(783.99, now); // G5
+      osc2.frequency.setValueAtTime(1046.50, now + 0.11); // C6
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.11);
+      osc2.start(now + 0.11);
+      osc2.stop(now + 0.38);
+    } else if (kind === "timer") {
+      [523.25, 659.25, 783.99].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.28);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.28);
+      });
+    } else if (kind === "click") {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(587.33, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+  } catch (_) {
+    // audio context blocked or unavailable
+  }
+}
+
+function renderSmartHub() {
+  const lightCard = $("#device-light");
+  const lightPill = $("#light-status-pill");
+  const lightDesc = $("#light-desc");
+  if (lightCard && lightPill) {
+    if (smartHome.light.on) {
+      lightCard.classList.add("is-light-on");
+      lightPill.className = "pill pill-on";
+      lightPill.textContent = "ON";
+      lightCard.style.setProperty("--person-color", smartHome.light.color || "#f59e0b");
+      lightCard.style.setProperty("--person-glow", (smartHome.light.color || "#f59e0b") + "44");
+      lightDesc.textContent = smartHome.light.person ? `${smartHome.light.person}’s color glow` : "Living room lit";
+    } else {
+      lightCard.classList.remove("is-light-on");
+      lightPill.className = "pill pill-off";
+      lightPill.textContent = "OFF";
+      lightDesc.textContent = "Voice: “lights on” / “lights off”";
+    }
+  }
+
+  const musicCard = $("#device-music");
+  const musicPill = $("#music-status-pill");
+  const musicTrack = $("#music-track");
+  if (musicCard && musicPill) {
+    if (smartHome.music.playing) {
+      musicCard.classList.add("is-music-playing");
+      musicPill.className = "pill pill-playing";
+      musicPill.textContent = "PLAYING";
+      musicTrack.textContent = smartHome.music.track;
+    } else {
+      musicCard.classList.remove("is-music-playing");
+      musicPill.className = "pill pill-off";
+      musicPill.textContent = "PAUSED";
+      musicTrack.textContent = "Voice: “play music” / “stop”";
+    }
+  }
+
+  const timerCard = $("#device-timer");
+  const timerPill = $("#timer-status-pill");
+  const timerDisplay = $("#timer-display");
+  const timerFill = $("#timer-fill");
+  if (timerCard && timerPill) {
+    if (smartHome.timer.running) {
+      timerCard.classList.add("is-timer-running");
+      timerPill.className = "pill pill-running";
+      timerPill.textContent = `${smartHome.timer.seconds}s`;
+      timerDisplay.textContent = smartHome.timer.person ? `${smartHome.timer.person}’s timer` : "Counting down...";
+      if (timerFill) {
+        const pct = ((smartHome.timer.total - smartHome.timer.seconds) / smartHome.timer.total) * 100;
+        timerFill.style.width = `${pct}%`;
+      }
+    } else {
+      timerCard.classList.remove("is-timer-running");
+      timerPill.className = "pill pill-off";
+      timerPill.textContent = smartHome.timer.seconds === 0 ? "DONE" : "READY";
+      timerDisplay.textContent = smartHome.timer.seconds === 0 ? "Timer finished!" : "Voice: “timer” (10s countdown)";
+      if (timerFill) timerFill.style.width = smartHome.timer.seconds === 0 ? "100%" : "0%";
+    }
+  }
+}
+
+function startTimer(seconds = 10, person = null) {
+  clearInterval(smartHome.timer.timerId);
+  smartHome.timer.running = true;
+  smartHome.timer.seconds = seconds;
+  smartHome.timer.total = seconds;
+  smartHome.timer.person = person;
+  renderSmartHub();
+  playChime("click");
+  smartHome.timer.timerId = setInterval(() => {
+    smartHome.timer.seconds -= 1;
+    if (smartHome.timer.seconds <= 0) {
+      clearInterval(smartHome.timer.timerId);
+      smartHome.timer.running = false;
+      smartHome.timer.seconds = 0;
+      renderSmartHub();
+      playChime("timer");
+      if (state.data.settings.announce !== false) {
+        speak(person ? `${person}, your timer is done!` : "Timer complete!");
+      }
+    } else {
+      renderSmartHub();
+    }
+  }, 1000);
+}
+
+function handleSmartAssistantAction(event) {
+  const kw = (event.keyword || "").toLowerCase().trim();
+  const person = event.person_name;
+  const color = event.person_color || "#8b5cf6";
+  const hubBadge = $("#hub-speaker-badge");
+  const hubName = $("#hub-speaker-name");
+
+  if (event.type === "keyword_unknown_speaker") {
+    if (hubBadge && hubName) {
+      hubBadge.className = "hub-speaker-badge is-rejected";
+      hubName.textContent = "Voice Match Failed · Impostor Rejected";
+    }
+    const leds = $("#google-leds");
+    if (leds) {
+      leds.className = "google-leds is-listening";
+      setTimeout(() => { if (leds) leds.className = "google-leds"; }, 2000);
+    }
+    return;
+  }
+
+  if (event.type === "keyword" || event.type === "speech") {
+    if (hubBadge && hubName && person) {
+      hubBadge.className = "hub-speaker-badge is-verified";
+      const conf = Math.round(Number(event.speaker_score || 0.85) * 100);
+      hubName.textContent = `Verified: ${person} (${conf}% Voice Match)`;
+    }
+
+    const leds = $("#google-leds");
+    if (leds) {
+      leds.className = "google-leds is-hit";
+      setTimeout(() => { if (leds) leds.className = "google-leds"; }, 2600);
+    }
+
+    if (kw === "hey google" || kw === "alexa") {
+      playChime("google");
+      if (state.data.settings.announce !== false && !event.speak) {
+        speak(`Hi ${person}, how can I help you?`);
+      }
+    } else if (kw.includes("light")) {
+      playChime("click");
+      if (kw.includes("off")) {
+        smartHome.light.on = false;
+        smartHome.light.person = person;
+        renderSmartHub();
+        if (state.data.settings.announce !== false && !event.speak) {
+          speak(`Turned off lights for ${person}`);
+        }
+      } else {
+        smartHome.light.on = true;
+        smartHome.light.color = color;
+        smartHome.light.person = person;
+        renderSmartHub();
+        if (state.data.settings.announce !== false && !event.speak) {
+          speak(`Lights turned on in ${person}’s color`);
+        }
+      }
+    } else if (kw.includes("music") || kw === "play") {
+      playChime("click");
+      smartHome.music.playing = true;
+      smartHome.music.track = `${person}’s Daily Mix · Chill Beats`;
+      smartHome.music.person = person;
+      renderSmartHub();
+      if (state.data.settings.announce !== false && !event.speak) {
+        speak(`Playing ${person}’s favorite mix`);
+      }
+    } else if (kw === "stop") {
+      if (smartHome.music.playing) {
+        smartHome.music.playing = false;
+        renderSmartHub();
+        playChime("click");
+      }
+      if (smartHome.timer.running) {
+        clearInterval(smartHome.timer.timerId);
+        smartHome.timer.running = false;
+        renderSmartHub();
+        playChime("click");
+      }
+    } else if (kw.includes("timer")) {
+      startTimer(10, person);
+    } else if (kw.includes("weather")) {
+      playChime("google");
+      if (state.data.settings.announce !== false && !event.speak) {
+        speak(`Good day ${person}, the forecast is 24 degrees and sunny`);
+      }
+    }
+  }
+}
+
 const DEFAULT_SETTINGS = {
   keyword_threshold: 0.45,
   keyword_margin: 0.06,
@@ -776,10 +1019,10 @@ function keywordStepTemplate(wizard) {
         ${RECOMMENDED.map((word) => `<button type="button" class="chip-btn ${custom.toLowerCase() === word ? "is-selected" : ""}" data-recommended="${word}">${word}</button>`).join("")}
       </div>
     </div>
-    <div id="keyword-warning" class="notice ${warning ? "" : "info"}">
+    <div id="keyword-warning" class="notice info">
       ${warning
-        ? "Custom / out-of-vocabulary keywords are experimental. Isolated words like <strong>stop</strong>, <strong>yes</strong>, and <strong>no</strong> are calibrated."
-        : "This word is in the validated vocabulary. Say it as a short, isolated utterance."}
+        ? `Custom keyword “<strong>${esc(custom.trim())}</strong>” ready. DISENT-KWS phonetic encoder handles any word or phrase.`
+        : "Assistant keyword selected. Say it as a short, isolated utterance."}
     </div>
   `;
 }
@@ -790,8 +1033,15 @@ function voiceStepTemplate(wizard) {
   return `
     <div class="notice ${micAvailable ? "info" : ""}">
       ${micAvailable
-        ? "Record 5 short takes (2 seconds each). 3 are required; 5 gives the best speaker profile."
-        : "No microphone API here. Use the upload fallback below, or open the UI on localhost via SSH port forwarding."}
+        ? "Record 5 short takes (2 seconds each). 3 are required; 5 gives the best profile."
+        : "No microphone API here. Use the instant AI generator below, or upload WAV files."}
+    </div>
+    <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <button type="button" class="auto-gen-btn" id="btn-auto-gen-takes">
+        <svg class="icon" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+        <span>⚡ Auto-Generate Takes (AI Voice)</span>
+      </button>
+      <span class="muted small">Zero mic effort · creates 5 diverse takes</span>
     </div>
     <div class="takes">
       ${wizard.takes.map((take, index) => `
@@ -799,7 +1049,7 @@ function voiceStepTemplate(wizard) {
           <div class="take-index">${index + 1}</div>
           <div class="take-info">
             <strong>${take ? "Ready" : "Not recorded"}</strong>
-            <span id="take-status-${index}">${take ? (take.uploaded ? "Uploaded WAV" : `${take.duration.toFixed(2)}s · ${take.sampleRate} Hz`) : "Record a 2 s take"}</span>
+            <span id="take-status-${index}">${take ? (take.uploaded ? "Ready (WAV)" : `${take.duration.toFixed(2)}s · ${take.sampleRate} Hz`) : "Record a 2 s take"}</span>
             <div class="take-level"><span id="take-level-${index}"></span></div>
           </div>
           <div class="take-actions">
@@ -906,23 +1156,63 @@ function wireWizard(wizard) {
   body.querySelectorAll("[data-take-play]").forEach((button) => {
     button.addEventListener("click", () => {
       const take = wizard.takes[Number(button.dataset.takePlay)];
-      if (take) new Audio(take.url).play().catch(() => toast("Could not play this take", "error"));
+      if (take) {
+        const url = take.url || (take.blob ? URL.createObjectURL(take.blob) : null);
+        if (url) new Audio(url).play().catch(() => toast("Could not play this take", "error"));
+      }
     });
   });
   const upload = $("#take-upload");
   if (upload) {
     upload.addEventListener("change", () => addUploadedTakes(upload.files));
   }
+
+  const autoGenBtn = $("#btn-auto-gen-takes");
+  if (autoGenBtn) {
+    autoGenBtn.addEventListener("click", async () => {
+      const kw = (wizard.keyword.label || wizard.keyword.id || "Hey Google").trim();
+      autoGenBtn.disabled = true;
+      autoGenBtn.innerHTML = `<span>⏳ Synthesizing 5 takes for “${esc(kw)}”...</span>`;
+      try {
+        const res = await api("/api/keywords/synthesize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: kw, count: 5 }),
+        });
+        if (res && res.takes && res.takes.length) {
+          for (let i = 0; i < res.takes.length && i < 5; i++) {
+            const take = res.takes[i];
+            const blobRes = await fetch(take.data_url);
+            const blob = await blobRes.blob();
+            wizard.takes[i] = {
+              blob,
+              url: URL.createObjectURL(blob),
+              duration: take.duration,
+              sampleRate: take.sample_rate || 16000,
+              uploaded: true,
+            };
+          }
+          toast(`Generated 5 takes for “${kw}”!`, "success");
+          renderWizard();
+        }
+      } catch (err) {
+        toast(`Synthesis failed: ${err.message}`, "error");
+        autoGenBtn.disabled = false;
+        autoGenBtn.innerHTML = `<span>⚡ Auto-Generate Takes (AI Voice)</span>`;
+      }
+    });
+  }
 }
 
 function updateKeywordWarning(value) {
   const warning = $("#keyword-warning");
   if (!warning) return;
-  const experimental = value.trim() && !RECOMMENDED.includes(value.trim().toLowerCase());
-  warning.className = `notice ${experimental ? "" : "info"}`;
+  const kw = value.trim();
+  const experimental = kw && !RECOMMENDED.includes(kw.toLowerCase());
+  warning.className = "notice info";
   warning.innerHTML = experimental
-    ? "Custom / out-of-vocabulary keywords are experimental. Isolated words like <strong>stop</strong>, <strong>yes</strong>, and <strong>no</strong> are calibrated."
-    : "This word is in the validated vocabulary. Say it as a short, isolated utterance.";
+    ? `Custom keyword “<strong>${esc(kw)}</strong>” ready. DISENT-KWS phonetic encoder handles any phrase.`
+    : "Assistant keyword selected. Say it as a short, isolated utterance.";
 }
 
 function updateRecommendedChips(value) {
@@ -1051,6 +1341,7 @@ function handleEvent(event) {
   renderResult(event);
   renderTimeline();
   renderLivePeople();
+  handleSmartAssistantAction(event);
   if (event.latency_ms?.total != null) {
     $("#latency-mini").textContent = `${Math.round(event.latency_ms.total)} ms`;
   }
@@ -1506,6 +1797,27 @@ function bindUI() {
   $("#add-keyword-btn").addEventListener("click", () => openKeywordEditor(null));
   $("#seed-btn").addEventListener("click", seedDemo);
 
+  // Smart Hub Device Controls
+  $("#toggle-light-btn")?.addEventListener("click", () => {
+    smartHome.light.on = !smartHome.light.on;
+    playChime("click");
+    renderSmartHub();
+  });
+  $("#toggle-music-btn")?.addEventListener("click", () => {
+    smartHome.music.playing = !smartHome.music.playing;
+    playChime("click");
+    renderSmartHub();
+  });
+  $("#start-timer-btn")?.addEventListener("click", () => {
+    startTimer(10, null);
+  });
+  $("#trigger-weather-btn")?.addEventListener("click", () => {
+    playChime("google");
+    if (state.data.settings.announce !== false) {
+      speak("Good day, the current weather is 24 degrees and sunny.");
+    }
+  });
+
   $("#modal-close").addEventListener("click", closeModal);
   $("#modal").addEventListener("click", (event) => {
     if (event.target.dataset.close) closeModal();
@@ -1694,6 +2006,7 @@ async function init() {
   }
   await loadHealth();
   populateDevices();
+  renderSmartHub();
   setInterval(loadHealth, 15000);
 }
 

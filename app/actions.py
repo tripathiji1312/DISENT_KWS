@@ -51,6 +51,10 @@ async def execute(
     if config.type == "announce":
         return {"type": "announce", "status": "ok", "text": text}
 
+    if config.type == "smart_home":
+        device = getattr(config, "smart_device", None) or "auto"
+        return {"type": "smart_home", "status": "ok", "device": device, "text": text}
+
     if config.type == "log":
         log.info("ACTION log person=%s keyword=%s text=%s", name, keyword, text)
         return {"type": "log", "status": "ok", "text": text}

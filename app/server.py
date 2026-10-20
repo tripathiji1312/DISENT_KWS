@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import functools
+import io
 import json
 import logging
+import os
+import shutil
+import subprocess
 import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -79,6 +84,11 @@ class KeywordCreate(BaseModel):
 class KeywordPatch(BaseModel):
     label: str | None = None
     threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class KeywordSynthesize(BaseModel):
+    text: str = Field(min_length=1, max_length=60)
+    count: int = Field(default=5, ge=1, le=8)
 
 
 class SettingsPatch(BaseModel):
@@ -267,6 +277,57 @@ def create_app(
         app.state.registry.delete_person(person_id, force=force)
         await broadcast_state(app)
         return Response(status_code=204)
+
+    @app.post("/api/keywords/synthesize")
+    async def synthesize_keyword(payload: KeywordSynthesize):
+        text = payload.text.strip()
+        count = payload.count
+        loop = asyncio.get_running_loop()
+
+        def _do_synth():
+            import soundfile as sf
+            from gtts import gTTS
+
+            tlds = ["com", "co.uk", "ca", "com.au", "co.in", "ie", "co.za", "co.nz"]
+            ffmpeg_bin = (
+                "/usr/sbin/ffmpeg"
+                if os.path.exists("/usr/sbin/ffmpeg")
+                else (shutil.which("ffmpeg") or "ffmpeg")
+            )
+            takes = []
+            for i in range(count):
+                tld = tlds[i % len(tlds)]
+                tts = gTTS(text=text, lang="en", tld=tld)
+                mp3_fp = io.BytesIO()
+                tts.write_to_fp(mp3_fp)
+
+                proc = subprocess.run(
+                    [ffmpeg_bin, "-y", "-i", "pipe:0", "-f", "wav", "-ar", "16000", "-ac", "1", "pipe:1"],
+                    input=mp3_fp.getvalue(),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True,
+                )
+                wav_bytes = proc.stdout
+                wav_data, sr = sf.read(io.BytesIO(wav_bytes))
+                duration = len(wav_data) / float(sr)
+                b64 = base64.b64encode(wav_bytes).decode("ascii")
+                takes.append(
+                    {
+                        "data_url": f"data:audio/wav;base64,{b64}",
+                        "duration": round(duration, 2),
+                        "sample_rate": int(sr),
+                        "accent": tld,
+                    }
+                )
+            return takes
+
+        try:
+            takes = await loop.run_in_executor(None, _do_synth)
+            return {"keyword": text, "takes": takes}
+        except Exception as exc:
+            log.exception("Keyword synthesis failed for %r: %s", text, exc)
+            raise HTTPException(status_code=500, detail=f"TTS synthesis failed: {exc}") from exc
 
     @app.post("/api/keywords", status_code=201)
     async def create_keyword(payload: KeywordCreate):
@@ -560,7 +621,7 @@ async def finalize_decision(
         if (
             settings.announce
             and action_result.get("status") == "ok"
-            and action_result.get("type") == "announce"
+            and action_result.get("type") in ("announce", "smart_home")
         ):
             speak = action_result.get("text")
 
