@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "people": [
+    {
+      "name": "Alice",
+      "keyword": "stop",
+      "color": "#8b5cf6",
+      "keyword_files": ["alice_stop.wav"],
+      "speaker_files": ["alice_sentence_1.wav", "alice_sentence_2.wav", "alice_sentence_3.wav"],
+      "action": {
+        "type": "announce",
+        "enabled": true,
+        "message_template": "{name} said {keyword}"
+      },
+      "trigger_on_any_speech": false
+    },
+    {
+      "name": "Bob",
+      "keyword": "stop",
+      "color": "#06b6d4",
+      "keyword_files": ["bob_stop.wav"],
+      "speaker_files": ["bob_sentence_1.wav", "bob_sentence_2.wav", "bob_sentence_3.wav"],
+      "action": {
+        "type": "announce",
+        "enabled": true,
+        "message_template": "{name} said {keyword}"
+      },
+      "trigger_on_any_speech": false
+    }
+  ],
+  "extras": {
+    "unknown_speaker_keyword": "unknown_stop.wav",
+    "unknown_speaker_sentence": "unknown_sentence.wav",
+    "arbitrary_speech_alice": "alice_speech.wav"
+  }
+}

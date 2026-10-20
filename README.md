@@ -26,7 +26,7 @@
 # Install dependencies
 uv sync --all-extras
 
-# Run tests (verify 60+ tests pass)
+# Run tests (verify 100+ tests pass)
 make test
 
 # Option A: Live record 5 utterances from mic, then enroll
@@ -44,6 +44,37 @@ python src/demo.py detect --enrollment enrollment.pt --auto-threshold --vad-thre
 
 ---
 
+## Multi-Person Voice Assistant (Browser Demo)
+
+A local Google Home/Alexa-style dashboard for several enrolled people. The same
+keyword can belong to more than one person; DISENT scores the keyword and
+SpeechBrain ECAPA identifies who said it. Unknown speakers are rejected, and
+per-person actions can announce, call a webhook, run an allowlisted shell
+command, or log the event.
+
+```bash
+# Install, seed Alice + Bob (both use "stop"), then start one worker
+uv sync --all-extras
+PYTHONPATH=src .venv/bin/python scripts/seed_demo.py --data-dir data --force
+./scripts/run_demo.sh
+```
+
+Open `http://127.0.0.1:8000` on the host, or forward the port to a laptop for
+microphone access:
+
+```bash
+ssh -N -L 8000:127.0.0.1:8000 <user>@<server>
+# then open http://localhost:8000
+```
+
+Browsers only allow microphone capture from `localhost` (or HTTPS); WAV
+upload/replay works without a microphone. See
+[`docs/multi_user_demo.md`](docs/multi_user_demo.md) for the full demo script,
+measured results, architecture, API/WebSocket contract, tuning, and
+troubleshooting.
+
+---
+
 ## Project Artifacts
 
 ### Technical Documentation
@@ -55,6 +86,7 @@ All technical documentation is organized in the [`docs/`](docs/) directory:
 | [`docs/solution_architecture.md`](docs/solution_architecture.md) | Architecture, mathematical foundations, loss functions, ablation study & results |
 | [`docs/installation.md`](docs/installation.md) | Environment setup, dependencies, dataset configuration |
 | [`docs/user_guide.md`](docs/user_guide.md) | Training pipeline, speaker enrollment, real-time demo, result reproducibility |
+| [`docs/multi_user_demo.md`](docs/multi_user_demo.md) | Multi-person browser dashboard: demo script, API/WS contract, tuning |
 | [`docs/ax.md`](docs/ax.md) | Agentic AI setup, workflows, tool chaining, and developer retrospective |
 
 ### Source Code

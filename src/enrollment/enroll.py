@@ -16,9 +16,12 @@ def trim_silence(wav: torch.Tensor, threshold_db: float = -30.0) -> torch.Tensor
     """Simple energy-based VAD to trim silence from enrollment WAVs."""
     if wav.dim() == 1:
         wav = wav.unsqueeze(0)
-    
+
+    window = 1600  # 100 ms at 16 kHz
+    if wav.shape[-1] < window:
+        return wav
+
     # Compute frame energy
-    window = 1600  # 100ms at 16kHz
     energy = wav.unfold(1, window, window).pow(2).mean(dim=2).squeeze(0)
     
     # Convert to dB and find loud frames

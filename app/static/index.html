@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#07070c" />
+  <title>DISENT Voice — multi-person assistant</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="aurora aurora-one" aria-hidden="true"></div>
+  <div class="aurora aurora-two" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div id="app" class="app-shell">
+    <aside class="sidebar glass">
+      <div class="brand">
+        <div class="brand-orb" aria-hidden="true"><span></span></div>
+        <div class="brand-copy">
+          <strong>DISENT</strong>
+          <span>voice assistant</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item is-active" data-view="live" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M10 12a2 2 0 0 1 4 0M12 16v4"/></svg>
+          <span>Live</span>
+        </button>
+        <button class="nav-item" data-view="people" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>People</span>
+        </button>
+        <button class="nav-item" data-view="keywords" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Keywords</span>
+        </button>
+        <button class="nav-item" data-view="settings" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.86a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.97 4.5H9a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.16.62.7 1.06 1.34 1.06H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-footer">
+        <div id="connection-pill" class="connection-pill is-offline" role="status">
+          <span class="dot"></span><span id="connection-text">Connecting</span>
+        </div>
+        <div class="model-mini">
+          <span>DISENT + ECAPA</span>
+          <span id="latency-mini">— ms</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="view-live" class="view is-active" aria-labelledby="live-title">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Live session</p>
+            <h1 id="live-title">Who&rsquo;s speaking?</h1>
+            <p class="lede">Say an isolated keyword. The assistant identifies the person and runs their action.</p>
+          </div>
+          <div class="header-actions">
+            <label class="sr-only" for="device-select">Microphone</label>
+            <select id="device-select" class="select compact" title="Microphone">
+              <option value="">Default microphone</option>
+            </select>
+            <button id="upload-btn" class="btn ghost" type="button">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              Upload WAV
+            </button>
+            <button id="mic-btn" class="btn primary" type="button">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+              <span id="mic-btn-label">Start listening</span>
+            </button>
+            <input id="wav-input" type="file" accept=".wav,audio/wav,audio/x-wav" hidden />
+          </div>
+        </header>
+
+        <div class="live-grid">
+          <section id="stage" class="stage glass" aria-label="Live audio stage">
+            <canvas id="waveform" aria-hidden="true"></canvas>
+            <div class="stage-vignette" aria-hidden="true"></div>
+            <div id="orb" class="orb is-idle" aria-hidden="true">
+              <div class="orb-ring ring-one"></div>
+              <div class="orb-ring ring-two"></div>
+              <div class="orb-core"></div>
+              <div class="orb-shine"></div>
+            </div>
+            <div class="stage-caption" aria-live="polite">
+              <p id="stage-status">Ready when you are</p>
+              <p id="stage-substatus" class="muted">Isolated words work best &middot; try <strong>stop</strong>, <strong>yes</strong>, or <strong>no</strong></p>
+            </div>
+            <div id="drop-hint" class="drop-hint">Drop a WAV anywhere to replay it</div>
+            <div class="stage-badges">
+              <span id="vad-badge" class="badge">VAD idle</span>
+              <span id="stream-badge" class="badge">16 kHz stream</span>
+            </div>
+          </section>
+
+          <aside id="result-card" class="result glass" aria-live="polite">
+            <div class="result-head">
+              <span class="eyebrow">Last detection</span>
+              <span id="result-time" class="muted small">—</span>
+            </div>
+            <div id="result-empty" class="result-empty">
+              <div class="empty-orbit" aria-hidden="true"></div>
+              <p>No voice yet</p>
+              <span class="muted small">The result will appear here after the first utterance.</span>
+            </div>
+            <div id="result-content" class="result-content" hidden>
+              <div class="result-person">
+                <div id="result-avatar" class="avatar avatar-xl">?</div>
+                <div>
+                  <p id="result-kicker" class="eyebrow">Keyword matched</p>
+                  <h2 id="result-name">—</h2>
+                </div>
+              </div>
+              <div id="result-keyword-row" class="result-keyword-row">
+                <span id="result-keyword" class="keyword-chip">stop</span>
+                <span id="result-action" class="muted small"></span>
+              </div>
+              <div class="meters">
+                <div class="meter">
+                  <div class="meter-label"><span>Keyword similarity</span><span id="keyword-score-label">0.00</span></div>
+                  <div class="meter-track"><span id="keyword-fill" class="meter-fill"></span><span id="keyword-tick" class="meter-tick"></span></div>
+                </div>
+                <div class="meter">
+                  <div class="meter-label"><span>Speaker similarity</span><span id="speaker-score-label">0.00</span></div>
+                  <div class="meter-track"><span id="speaker-fill" class="meter-fill"></span><span id="speaker-tick" class="meter-tick"></span></div>
+                </div>
+              </div>
+              <div class="result-meta">
+                <span id="result-latency" class="pill">— ms</span>
+                <span id="result-duration" class="pill">— s</span>
+                <span id="result-margin" class="pill">margin —</span>
+              </div>
+              <p id="result-note" class="result-note muted small"></p>
+            </div>
+          </aside>
+        </div>
+
+        <section class="people-rail glass">
+          <div class="section-head">
+            <div><span class="eyebrow">Enrolled people</span><p class="muted small">A glowing chip means the last detection matched that person.</p></div>
+            <button id="rail-add" class="btn tiny ghost" type="button">Add person</button>
+          </div>
+          <div id="live-people" class="people-chips"></div>
+        </section>
+
+        <div class="lower-grid">
+          <section class="timeline glass">
+            <div class="section-head">
+              <div><span class="eyebrow">Timeline</span><p class="muted small">Every utterance, score, and action.</p></div>
+              <span id="event-count" class="pill">0 events</span>
+            </div>
+            <div id="timeline" class="timeline-list" aria-live="polite"></div>
+          </section>
+
+          <section class="tips glass">
+            <div class="section-head"><div><span class="eyebrow">Demo flow</span><p class="muted small">The short version for tomorrow.</p></div></div>
+            <ol class="tip-list">
+              <li><span>1</span><div><strong>Enroll two people</strong><p>People &rarr; Add person. Use <em>stop</em> for both.</p></div></li>
+              <li><span>2</span><div><strong>Start listening</strong><p>Say just the keyword, then pause.</p></div></li>
+              <li><span>3</span><div><strong>Reveal the person</strong><p>The name, scores, action, and latency appear live.</p></div></li>
+              <li><span>4</span><div><strong>Fallback</strong><p>Drop a WAV on the stage to replay a known clip.</p></div></li>
+            </ol>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-people" class="view" aria-labelledby="people-title">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Registry</p>
+            <h1 id="people-title">People</h1>
+            <p class="lede">Each person has a speaker voiceprint, one or more keywords, and an action.</p>
+          </div>
+          <div class="header-actions">
+            <button id="seed-btn" class="btn ghost" type="button">Load demo people</button>
+            <button id="add-person-btn" class="btn primary" type="button">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Add person
+            </button>
+          </div>
+        </header>
+        <div id="people-grid" class="card-grid"></div>
+      </section>
+
+      <section id="view-keywords" class="view" aria-labelledby="keywords-title">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Vocabulary</p>
+            <h1 id="keywords-title">Keywords</h1>
+            <p class="lede">A keyword can belong to several people. Speaker ID picks the right owner.</p>
+          </div>
+          <div class="header-actions">
+            <button id="add-keyword-btn" class="btn primary" type="button">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              Add keyword
+            </button>
+          </div>
+        </header>
+        <div id="keywords-grid" class="card-grid"></div>
+      </section>
+
+      <section id="view-settings" class="view" aria-labelledby="settings-title">
+        <header class="view-header">
+          <div>
+            <p class="eyebrow">Tuning</p>
+            <h1 id="settings-title">Settings</h1>
+            <p class="lede">Thresholds are calibrated for isolated keywords and short utterances. Change one variable at a time.</p>
+          </div>
+          <div class="header-actions">
+            <button id="reset-settings" class="btn ghost" type="button">Reset defaults</button>
+            <button id="save-settings" class="btn primary" type="button">Save settings</button>
+          </div>
+        </header>
+
+        <div class="settings-grid">
+          <section class="settings-card glass">
+            <div class="section-head"><div><span class="eyebrow">Keyword matching</span><p class="muted small">DISENT phonetic cosine.</p></div></div>
+            <div class="field">
+              <label for="keyword-threshold">Keyword threshold <output id="keyword-threshold-out"></output></label>
+              <input id="keyword-threshold" data-setting="keyword_threshold" type="range" min="0.20" max="0.80" step="0.01" />
+              <p class="hint">Default 0.45. Lower finds more, but false positives rise.</p>
+            </div>
+            <div class="field">
+              <label for="keyword-margin">Top-1 vs top-2 margin <output id="keyword-margin-out"></output></label>
+              <input id="keyword-margin" data-setting="keyword_margin" type="range" min="0.00" max="0.25" step="0.01" />
+              <p class="hint">Default 0.06. Requires the winning keyword to be clearly ahead.</p>
+            </div>
+            <div class="field">
+              <label for="max-keyword">Max keyword utterance <output id="max-keyword-out"></output></label>
+              <input id="max-keyword" data-setting="max_keyword_utterance_sec" type="range" min="1.0" max="5.0" step="0.1" />
+              <p class="hint">Default 2.5 s. Longer clips are treated as arbitrary speech.</p>
+            </div>
+          </section>
+
+          <section class="settings-card glass">
+            <div class="section-head"><div><span class="eyebrow">Speaker matching</span><p class="muted small">ECAPA voiceprint cosine.</p></div></div>
+            <div class="field">
+              <label for="speaker-margin">Speaker margin <output id="speaker-margin-out"></output></label>
+              <input id="speaker-margin" data-setting="speaker_margin" type="range" min="0.00" max="0.30" step="0.01" />
+              <p class="hint">Default 0.08. Higher is stricter when two voices are close.</p>
+            </div>
+            <div class="field">
+              <label for="speaker-scale">Threshold scale <output id="speaker-scale-out"></output></label>
+              <input id="speaker-scale" data-setting="speaker_threshold_scale" type="range" min="0.70" max="1.40" step="0.01" />
+              <p class="hint">Default 1.00. Scales the duration-adaptive base threshold.</p>
+            </div>
+            <div class="field">
+              <label for="cooldown">Action cooldown <output id="cooldown-out"></output></label>
+              <input id="cooldown" data-setting="cooldown_sec" type="range" min="0.0" max="10.0" step="0.1" />
+              <p class="hint">Default 1.5 s. Prevents a duplicate action from one utterance.</p>
+            </div>
+          </section>
+
+          <section class="settings-card glass">
+            <div class="section-head"><div><span class="eyebrow">Segmentation</span><p class="muted small">Silero VAD.</p></div></div>
+            <div class="field">
+              <label for="vad-threshold">VAD threshold <output id="vad-threshold-out"></output></label>
+              <input id="vad-threshold" data-setting="vad_threshold" type="range" min="0.20" max="0.80" step="0.01" />
+              <p class="hint">Default 0.50. Raise it in a noisy room.</p>
+            </div>
+            <div class="field">
+              <label for="min-speech">Minimum speech <output id="min-speech-out"></output></label>
+              <input id="min-speech" data-setting="min_speech_ms" type="range" min="150" max="1200" step="50" />
+              <p class="hint">Default 350 ms. Shorter blips are ignored.</p>
+            </div>
+            <div class="field">
+              <label for="max-utterance">Max utterance <output id="max-utterance-out"></output></label>
+              <input id="max-utterance" data-setting="max_utterance_sec" type="range" min="2.0" max="12.0" step="0.5" />
+              <p class="hint">Default 6.0 s. Force-finalizes if no VAD end arrives.</p>
+            </div>
+          </section>
+
+          <section class="settings-card glass">
+            <div class="section-head"><div><span class="eyebrow">Behaviour</span><p class="muted small">Actions and announcements.</p></div></div>
+            <label class="switch-row">
+              <span><strong>Speak the result</strong><small>Browser TTS announces the person and keyword.</small></span>
+              <input id="announce" data-setting="announce" type="checkbox" class="switch" />
+            </label>
+            <label class="switch-row">
+              <span><strong>Run actions</strong><small>Allow per-person announce, webhook, log, and shell actions.</small></span>
+              <input id="actions-enabled" data-setting="actions_enabled" type="checkbox" class="switch" />
+            </label>
+            <div id="health-panel" class="health-panel"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close="1"></div>
+    <div class="modal-panel glass" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-head">
+        <div>
+          <p id="modal-eyebrow" class="eyebrow">Enrollment</p>
+          <h2 id="modal-title">Add a person</h2>
+        </div>
+        <button id="modal-close" class="icon-btn" type="button" aria-label="Close dialog">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div id="modal-steps" class="stepper" aria-hidden="true"></div>
+      <div id="modal-body" class="modal-body"></div>
+      <footer id="modal-footer" class="modal-footer"></footer>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="drop-overlay" class="drop-overlay" hidden><div>Drop a WAV to replay</div></div>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

@@ -142,6 +142,9 @@ Thumbs.db
 # Project-specific
 # ---------------------------------------------------------------------------
 
+# Runtime multi-person registry and voiceprints (seed with scripts/seed_demo.py)
+data/
+
 # Data (keep data/*.py source)
 data/raw/
 data/processed/
@@ -153,6 +156,10 @@ recordings/
 *.wav
 *.mp3
 *.flac
+
+# Demo and test fixtures are intentionally committed (see demo_assets/README.md)
+!demo_assets/*.wav
+!tests/fixtures/*.wav
 
 # Models & checkpoints
 checkpoints/

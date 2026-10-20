@@ -5,19 +5,25 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "fastapi==0.156.0",
     "librosa>=0.11.0",
     "matplotlib>=3.10.9",
     "onnxruntime==1.18.1",
     "openai-whisper>=20250625",
     "pyroomacoustics>=0.10.1",
+    "python-multipart==0.0.32",
+    "silero-vad==6.2.3",
     "sounddevice>=0.5.5",
     "soundfile>=0.13.1",
     "speechbrain>=1.1.0",
+    "starlette==1.7.0",
     "torch>=2.12.0",
     "torch-audiomentations>=0.12.0",
     "torchaudio>=2.11.0",
     "torchcodec>=0.14.0",
+    "uvicorn[standard]==0.54.0",
     "wandb>=0.27.0",
+    "websockets==16.1.1",
 ]
 
 [project.optional-dependencies]
